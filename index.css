@@ -743,12 +743,12 @@ a { color: inherit; }
         line-height: 1.4;
     }
 }
+/* 明朝体にする設定 */
+body, h1, h2, h3, h4, h5, h6, p, span, div, label, input, select, button {
+  font-family: "BIZ UDPMincho", "Hiragino Mincho ProN", "MS Mincho", serif !important;
+}
+
 /* 角を丸くしない設定 */
 * {
   border-radius: 0 !important;
-}
-
-/* フォントを明朝体（セリフ体）にする設定 */
-body, h1, h2, h3, h4, h5, h6, p, span, div, label, input, select, button {
-  font-family: "BIZ UDPMincho", "Hiragino Mincho ProN", "MS Mincho", serif !important;
 }

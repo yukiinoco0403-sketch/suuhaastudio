@@ -1,0 +1,1848 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="format-detection" content="telephone=no, date=no, address=no, email=no">
+    <title>見積もりシミュレーター</title>
+
+    <link rel="stylesheet" href="./index.css">
+</head>
+<body>
+
+<div class="container">
+
+    <!-- ヘッダー -->
+    <header class="site-header">
+        <div class="site-header__left">
+            <div>
+                <h1 class="site-header__title" id="headerTitle"></h1>
+                <p class="site-header__sub" id="headerSub"></p>
+            </div>
+        </div>
+        <span id="saveIndicator">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+            </svg>
+            保存済み
+        </span>
+    </header>
+
+    <!-- ヒーロー -->
+    <div class="hero" id="heroArea">
+        <div class="hero__inner">
+            <div style="min-width:0;">
+                <p class="hero__site-type hidden" id="heroSiteType"></p>
+                <p class="hero__label">概算 合計金額（税込）</p>
+                <p class="hero__total stat-number" id="heroTotal">¥0</p>
+                <p class="hero__sub">
+                    <span id="heroTaxExWrap">税抜&nbsp;<span class="stat-number" id="heroTotalEx">¥0</span></span><span id="heroPagesWrap">&ensp;/&ensp;ページ数&nbsp;<span class="stat-number" id="heroPages">–</span></span>
+                </p>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+                <button id="heroResetBtn" class="hero__reset-btn">↺ リセット</button>
+                <span class="hero__step-badge" id="heroStepLabel">Step 1 / 1</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════
+         ウィザードモード
+    ══════════════════════════════ -->
+    <div id="wizardMode">
+
+        <!-- プログレスバー -->
+        <div class="progress">
+            <div class="progress__labels">
+                <span>進捗</span><span id="progressLabel">0 / 0 完了</span>
+            </div>
+            <div class="progress__track">
+                <div class="progress__bar" id="progressBar"></div>
+            </div>
+        </div>
+
+        <!-- Web制作版 Step 1〜4（flex モードでは JS により非表示） -->
+        <div id="webStepsWizard">
+
+            <!-- Step 1 -->
+            <div class="panel" id="step1Panel">
+                <div class="panel__head">
+                    <div class="panel__head-left">
+                        <span class="step-badge">Step 1</span>
+                        <span class="step-label">サイトタイプを選択</span>
+                    </div>
+                    <span class="panel__head-hint">単一選択</span>
+                </div>
+                <div class="panel__body panel__body--gap" id="step1Options"></div>
+                <div class="panel__footer panel__footer--step1">
+                    <button id="step1Next" disabled class="btn-primary btn-primary--step1">次へ進む →</button>
+                </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="panel hidden" id="step2Panel">
+                <div class="panel__head">
+                    <div class="panel__head-left">
+                        <span class="step-badge">Step 2</span>
+                        <span class="step-label">ページ構成を選択</span>
+                    </div>
+                    <span class="panel__head-hint">複数選択・数量指定可</span>
+                </div>
+                <div class="panel__body panel__body--gap5" id="step2Options"></div>
+                <div class="panel__footer">
+                    <div class="btn-row">
+                        <button id="step2Back" class="btn-secondary">← 戻る</button>
+                        <button id="step2Next" class="btn-primary">次へ →</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="panel hidden" id="step3Panel">
+                <div class="panel__head">
+                    <div class="panel__head-left">
+                        <span class="step-badge">Step 3</span>
+                        <span class="step-label">機能・演出を選択</span>
+                    </div>
+                    <span class="panel__head-hint">複数選択・数量指定可</span>
+                </div>
+                <div class="panel__body panel__body--gap" id="step3Options"></div>
+                <div class="panel__footer">
+                    <div class="btn-row">
+                        <button id="step3Back" class="btn-secondary">← 戻る</button>
+                        <button id="step3Next" class="btn-primary">次へ →</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="panel hidden" id="step4Panel">
+                <div class="panel__head">
+                    <div class="panel__head-left">
+                        <span class="step-badge">Step 4</span>
+                        <span class="step-label">システム・設定を選択</span>
+                    </div>
+                    <span class="panel__head-hint">複数選択</span>
+                </div>
+                <div class="panel__body panel__body--gap" id="step4Options"></div>
+                <div class="panel__footer">
+                    <div class="btn-row">
+                        <button id="step4Back" class="btn-secondary">← 戻る</button>
+                        <button id="step4Finish" class="btn-primary">見積もり結果を見る ✓</button>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /webStepsWizard -->
+
+        <!-- フリーStep（flex: Step1以降 / web: Step5以降）：JSで動的挿入 -->
+        <div id="freeStepsContainer"></div>
+
+    </div><!-- /wizardMode -->
+
+    <!-- ══════════════════════════════
+         結果モード
+    ══════════════════════════════ -->
+    <div id="resultMode" class="hidden result-section">
+
+        <!-- アクションバー -->
+        <div class="panel">
+            <div class="action-bar__hint">選択内容を変更するとリアルタイムで再計算されます。</div>
+            <div class="action-bar__body">
+                <button id="btnConsult" class="btn-consult">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                    </svg>
+                    この内容で相談する
+                </button>
+                <div class="action-bar__sub-row">
+                    <button id="btnCopy" class="btn-icon">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                        </svg>
+                        お見積り内容をコピー
+                    </button>
+                    <button id="btnPdf" class="btn-icon">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        PDFで出力
+                    </button>
+                    <button id="btnReset" class="btn-reset">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                        リセット
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Web制作版 結果 Step 1〜4（flex モードでは JS により非表示） -->
+        <div id="webResultSteps">
+
+            <!-- 結果 Step 1 -->
+            <div class="panel" style="margin-top:16px;">
+                <div class="panel__head">
+                    <div class="panel__head-left">
+                        <span class="step-badge">Step 1</span>
+                        <span class="step-label">サイトタイプ</span>
+                    </div>
+                    <span class="panel__head-hint">単一選択</span>
+                </div>
+                <div class="panel__body panel__body--gap" id="r1Options"></div>
+            </div>
+
+            <!-- 結果 Step 2 -->
+            <div class="panel" style="margin-top:16px;">
+                <div class="panel__head">
+                    <div class="panel__head-left">
+                        <span class="step-badge">Step 2</span>
+                        <span class="step-label">ページ構成</span>
+                    </div>
+                    <span class="panel__head-hint">複数選択・数量指定可</span>
+                </div>
+                <div class="panel__body panel__body--gap5" id="r2Options"></div>
+            </div>
+
+            <!-- 結果 Step 3 -->
+            <div class="panel" style="margin-top:16px;">
+                <div class="panel__head">
+                    <div class="panel__head-left">
+                        <span class="step-badge">Step 3</span>
+                        <span class="step-label">機能・演出</span>
+                    </div>
+                    <span class="panel__head-hint">複数選択・数量指定可</span>
+                </div>
+                <div class="panel__body panel__body--gap" id="r3Options"></div>
+            </div>
+
+            <!-- 結果 Step 4 -->
+            <div class="panel" style="margin-top:16px;">
+                <div class="panel__head">
+                    <div class="panel__head-left">
+                        <span class="step-badge">Step 4</span>
+                        <span class="step-label">システム・設定</span>
+                    </div>
+                    <span class="panel__head-hint">複数選択</span>
+                </div>
+                <div class="panel__body panel__body--gap" id="r4Options"></div>
+            </div>
+
+        </div><!-- /webResultSteps -->
+
+        <!-- フリーStep 結果表示（JSで動的挿入） -->
+        <div id="rFreeStepsContainer"></div>
+
+        <!-- 注意書き -->
+        <div class="disclaimer">
+            <p id="disclaimerText">※ 本ツールの見積もりは概算です。実際の金額はヒアリング内容・要件定義により変動します。正式なお見積もりはお問い合わせください。</p>
+        </div>
+
+    </div><!-- /resultMode -->
+
+</div><!-- /container -->
+
+<div id="toastContainer"></div>
+
+<!-- ══ 印刷専用レイアウト ══ -->
+<div id="printArea">
+    <div class="pa-header">
+        <h1 class="pa-title" id="pdfTitle"></h1>
+        <div class="pa-meta">
+            <div>お見積り日：<span id="pdfDate"></span></div>
+            <div>※本書は概算見積りです。正式なお見積りは別途ご提示いたします。</div>
+        </div>
+    </div>
+
+    <div class="pa-total-box">
+        <div>
+            <div class="pa-total-label">概算合計金額（税込）</div>
+            <div class="pa-total-amount" id="pdfTotal"></div>
+            <div class="pa-total-sub" id="pdfTotalEx"></div>
+        </div>
+        <div style="text-align:right;" id="pdfPagesBox">
+            <div class="pa-total-label">ページ数</div>
+            <div style="font-size:13px;font-weight:700;color:#255797;" id="pdfPages"></div>
+        </div>
+    </div>
+
+    <div class="pa-section">
+        <div class="pa-section-title">明細</div>
+        <table class="pa-table">
+            <thead>
+                <tr>
+                    <th style="width:60%;">項目</th>
+                    <th style="width:15%;">数量</th>
+                    <th style="width:25%;">金額</th>
+                </tr>
+            </thead>
+            <tbody id="pdfTbody"></tbody>
+        </table>
+    </div>
+
+    <div class="pa-summary">
+        <table>
+            <tr><td class="s-label">制作費小計</td><td class="s-val" id="pdfProd"></td></tr>
+            <tr id="pdfDirRow"><td class="s-label" id="pdfDirLabel">プロジェクト進行・ディレクション費</td><td class="s-val" id="pdfDir"></td></tr>
+            <tr id="pdfExclRow"><td class="s-label">税抜合計</td><td class="s-val" id="pdfExcl"></td></tr>
+            <tr id="pdfTaxRow"><td class="s-label" id="pdfTaxLabel">消費税（10%）</td><td class="s-val" id="pdfTax"></td></tr>
+            <tr class="s-total"><td class="s-label" id="pdfInclLabel">税込合計</td><td class="s-val" id="pdfIncl"></td></tr>
+        </table>
+    </div>
+
+    <div class="pa-note" id="pdfNote"></div>
+
+    <div class="pa-sig">
+        <div>
+            <div class="pa-sig-name" id="pdfSigName"></div>
+            <div class="pa-sig-sub"  id="pdfSigPerson"></div>
+            <div class="pa-sig-links" id="pdfSigLinks"></div>
+        </div>
+        <div class="pa-sig-logo" id="pdfSigLogo"></div>
+    </div>
+</div>
+
+<!-- settings.js を先に読み込む -->
+<script src="./core.js"></script>
+<script src="./settings.js"></script>
+
+<script>
+'use strict';
+/* ═══════════════════════════════════════════════════════════
+   DEFAULT_SETTINGS で未定義キーを補完
+═══════════════════════════════════════════════════════════ */
+{
+    const DEFAULT_SETTINGS = {
+        companyName:        '',
+        personName:         '',
+        email:              '',
+        url:                '',
+        department:         '',
+        postalCode:         '',
+        address:            '',
+        tel:                '',
+        fax:                '',
+        contactUrl:         '',
+        sns:                [],
+        logoBase64:         '',
+        pdfTitle:           '概算お見積書',
+        pdfNote:            '',
+        disclaimer:         '※ 本ツールの見積もりは概算です。実際の金額はヒアリング内容・要件定義により変動します。正式なお見積もりはお問い合わせください。',
+        toolTitle:          '見積もりシミュレーター',
+        toolSubtitle:       '選択するだけで概算金額を即座に算出。',
+        storageKey:         'estimate_v1',
+        templateType:       'flex',
+        templateName:       '',
+        colorPrimary:       '#6366f1',
+        colorSecondary:     '#8b5cf6',
+        colorBg:            '#f8f8fc',
+        colorAccentBg:      '#eef2ff',
+        colorAccentBorder:  '#a5b4fc',
+        colorWarningBg:     '#fffbeb',
+        colorWarningText:   '#92400e',
+        colorWarningBorder: '#fcd34d',
+        colorPanelHeadBg:   '#6366f1',
+        colorPanelHeadText: '#ffffff',
+        colorCardSubText:   '#6b7280',
+    };
+    Object.keys(DEFAULT_SETTINGS).forEach(key => {
+        if (SETTINGS[key] === undefined) SETTINGS[key] = DEFAULT_SETTINGS[key];
+    });
+}
+/* ═══════════════════════════════════════════════════════════
+   トップレベル定数の後方互換
+═══════════════════════════════════════════════════════════ */
+if (typeof S2_TOP_PRICE_LP   === 'undefined') window.S2_TOP_PRICE_LP   = 70000;
+if (typeof S2_TOP_PRICE_STD  === 'undefined') window.S2_TOP_PRICE_STD  = 65000;
+if (typeof LP_SECTION_PRICE  === 'undefined') window.LP_SECTION_PRICE  = 15000;
+if (typeof STEP1_ITEMS       === 'undefined') window.STEP1_ITEMS       = [];
+if (typeof STEP2_CATS        === 'undefined') window.STEP2_CATS        = [];
+if (typeof STEP3_ITEMS       === 'undefined') window.STEP3_ITEMS       = [];
+if (typeof STEP4_VAR         === 'undefined') window.STEP4_VAR         = [];
+if (typeof STEP4_FIX         === 'undefined') window.STEP4_FIX         = [];
+if (typeof FREE_STEPS        === 'undefined') window.FREE_STEPS        = [];
+
+/* ═══════════════════════════════════════════════════════════
+   テンプレートモード判定
+   IS_FLEX  = true  → 汎用版（フリーStepのみ）
+   IS_FLEX  = false → Web制作版（Step1〜4 + フリーStep）
+   FREE_STEP_OFFSET = Step開始番号のオフセット
+     flex: 0  → Step 1, 2, 3...
+     web:  4  → Step 5, 6, 7...
+═══════════════════════════════════════════════════════════ */
+let IS_FLEX = SETTINGS.templateType !== 'web';
+let FREE_STEP_OFFSET = IS_FLEX ? 0 : 4;
+
+/* ═══════════════════════════════════════════════════════════
+   初期化（カラー・プレビュー設定の適用）
+═══════════════════════════════════════════════════════════ */
+(function applyColors() {
+    const S  = SETTINGS;
+    const r  = document.documentElement.style;
+
+    // admin.html から「ツールを確認」で開いた場合、一時カラーを localStorage から読み取る
+    const PREVIEW_KEY = (SETTINGS.storageKey || 'estimate_v1') + '_previewColors';
+    let previewColors = null;
+    try {
+        const raw = localStorage.getItem(PREVIEW_KEY);
+        if (raw) {
+            previewColors = JSON.parse(raw);
+            localStorage.removeItem(PREVIEW_KEY);
+        }
+    } catch(_) {}
+
+    if (previewColors) {
+        // テンプレートタイプを先に適用して IS_FLEX / FREE_STEP_OFFSET を再計算
+        if (previewColors._templateType !== undefined) {
+            SETTINGS.templateType = previewColors._templateType;
+            IS_FLEX = SETTINGS.templateType !== 'web';
+            FREE_STEP_OFFSET = IS_FLEX ? 0 : 4;
+        }
+        if (Array.isArray(previewColors._freeSteps)) {
+            FREE_STEPS.splice(0, FREE_STEPS.length, ...previewColors._freeSteps);
+        }
+        if (Array.isArray(previewColors._step1)) {
+            STEP1_ITEMS.splice(0, STEP1_ITEMS.length, ...previewColors._step1);
+        }
+        if (Array.isArray(previewColors._step2)) {
+            STEP2_CATS.splice(0, STEP2_CATS.length, ...previewColors._step2);
+        }
+        if (Array.isArray(previewColors._step3)) {
+            STEP3_ITEMS.splice(0, STEP3_ITEMS.length, ...previewColors._step3);
+        }
+        if (Array.isArray(previewColors._step4var)) {
+            STEP4_VAR.splice(0, STEP4_VAR.length, ...previewColors._step4var);
+        }
+        if (Array.isArray(previewColors._step4fix)) {
+            STEP4_FIX.splice(0, STEP4_FIX.length, ...previewColors._step4fix);
+        }
+        if (previewColors._contactUrl  !== undefined) SETTINGS.contactUrl  = previewColors._contactUrl;
+        if (previewColors._s2TopLp    !== undefined) SETTINGS._previewS2TopLp    = previewColors._s2TopLp;
+        if (previewColors._s2TopStd   !== undefined) SETTINGS._previewS2TopStd   = previewColors._s2TopStd;
+        if (previewColors._lpSecPrice !== undefined) SETTINGS._previewLpSecPrice = previewColors._lpSecPrice;
+        if (previewColors._companyName  !== undefined) SETTINGS.companyName  = previewColors._companyName;
+        if (previewColors._personName   !== undefined) SETTINGS.personName   = previewColors._personName;
+        if (previewColors._email        !== undefined) SETTINGS.email        = previewColors._email;
+        if (previewColors._url          !== undefined) SETTINGS.url          = previewColors._url;
+        if (previewColors._department   !== undefined) SETTINGS.department   = previewColors._department;
+        if (previewColors._postalCode   !== undefined) SETTINGS.postalCode   = previewColors._postalCode;
+        if (previewColors._address      !== undefined) SETTINGS.address      = previewColors._address;
+        if (previewColors._tel          !== undefined) SETTINGS.tel          = previewColors._tel;
+        if (previewColors._fax          !== undefined) SETTINGS.fax          = previewColors._fax;
+        if (previewColors._logoBase64   !== undefined) SETTINGS.logoBase64   = previewColors._logoBase64;
+        if (previewColors._toolTitle    !== undefined) SETTINGS.toolTitle    = previewColors._toolTitle;
+        if (previewColors._toolSubtitle !== undefined) SETTINGS.toolSubtitle = previewColors._toolSubtitle;
+        if (previewColors._pdfTitle     !== undefined) SETTINGS.pdfTitle     = previewColors._pdfTitle;
+        if (previewColors._pdfNote      !== undefined) SETTINGS.pdfNote      = previewColors._pdfNote;
+        if (previewColors._disclaimer   !== undefined) SETTINGS.disclaimer   = previewColors._disclaimer;
+        if (Array.isArray(previewColors._sns)) SETTINGS.sns = previewColors._sns;
+        if (previewColors._directionFeeType  !== undefined) SETTINGS.directionFeeType  = previewColors._directionFeeType;
+        if (previewColors._directionFeeValue !== undefined) SETTINGS.directionFeeValue = previewColors._directionFeeValue;
+        if (previewColors._taxRate           !== undefined) SETTINGS.taxRate           = previewColors._taxRate;
+    }
+
+    const C = previewColors || {};
+    const get = (key) => C[key] || S[key];
+
+    const cp  = get('colorPrimary');
+    const cs  = get('colorSecondary');
+    const cbg = get('colorBg');
+    const cab = get('colorAccentBg');
+    const cao = get('colorAccentBorder');
+    const cwb = get('colorWarningBg');
+    const cwt = get('colorWarningText');
+    const cwo = get('colorWarningBorder');
+
+    if (cp)  r.setProperty('--color-primary',        cp);
+    if (cs)  r.setProperty('--color-secondary',      cs);
+    if (cbg) r.setProperty('--color-bg',             cbg);
+    if (cab) r.setProperty('--color-accent-bg',      cab);
+    if (cao) r.setProperty('--color-accent-border',  cao);
+    if (cwb) r.setProperty('--color-amber-50',       cwb);
+    if (cwt) r.setProperty('--color-amber-700',      cwt);
+    if (cwo) r.setProperty('--color-amber-200',      cwo);
+
+    const cph = get('colorPanelHeadBg');
+    const cpt = get('colorPanelHeadText');
+    const ccs = get('colorCardSubText');
+    if (cph) r.setProperty('--color-panel-head-bg',   cph);
+    if (cpt) r.setProperty('--color-panel-head-text', cpt);
+    if (ccs) r.setProperty('--color-card-sub-text',   ccs);
+    if (cs) {
+        const hex = cs.replace('#','');
+        const rv = parseInt(hex.slice(0,2),16);
+        const gv = parseInt(hex.slice(2,4),16);
+        const bv = parseInt(hex.slice(4,6),16);
+        r.setProperty('--shadow-md', `0 4px 12px rgba(${rv},${gv},${bv},.15)`);
+    }
+
+    const p  = cp  || '#3EB2D2';
+    const s2 = cs  || '#255797';
+    const ab = cab || '#eef7fc';
+    const ao = cao || '#bae6fd';
+    const printStyle = document.createElement('style');
+    printStyle.textContent = `
+        @media print {
+            .pa-header    { border-bottom-color: ${s2} !important; }
+            .pa-title     { color: ${s2} !important; }
+            .pa-total-box { background: ${ab} !important; border-color: ${ao} !important; }
+            .pa-total-amount { color: ${s2} !important; }
+            #pdfPages     { color: ${s2} !important; }
+            .pa-section-title { color: ${p} !important; }
+            .pa-table th  { background: #f8fafc !important; }
+            .s-total td   { border-top-color: ${s2} !important; color: ${s2} !important; }
+            .pa-sig-logo-text { color: ${s2} !important; }
+        }
+    `;
+    document.head.appendChild(printStyle);
+})();
+
+/* ═══════════════════════════════════════════════════════════
+   価格定数：プレビュー時は SETTINGS._preview* を優先使用
+═══════════════════════════════════════════════════════════ */
+const _S2_TOP_LP  = SETTINGS._previewS2TopLp    !== undefined ? SETTINGS._previewS2TopLp    : S2_TOP_PRICE_LP;
+const _S2_TOP_STD = SETTINGS._previewS2TopStd   !== undefined ? SETTINGS._previewS2TopStd   : S2_TOP_PRICE_STD;
+const _LP_SEC     = SETTINGS._previewLpSecPrice !== undefined ? SETTINGS._previewLpSecPrice : LP_SECTION_PRICE;
+
+document.title = SETTINGS.toolTitle + ' | 概算費用を即座に計算';
+document.getElementById('headerTitle').textContent = SETTINGS.toolTitle;
+document.getElementById('headerSub').textContent   = SETTINGS.toolSubtitle;
+document.getElementById('pdfTitle').textContent    = SETTINGS.pdfTitle;
+if (SETTINGS.disclaimer) {
+    const disclaimerEl = document.getElementById('disclaimerText');
+    if (disclaimerEl) disclaimerEl.textContent = SETTINGS.disclaimer;
+}
+
+// contactUrl 未設定時は「この内容で相談する」ボタンを非表示
+if (!SETTINGS.contactUrl) {
+    const btnConsult = document.getElementById('btnConsult');
+    if (btnConsult) btnConsult.style.display = 'none';
+}
+
+// flex モードでは Web制作版専用 UI を非表示
+if (IS_FLEX) {
+    document.getElementById('webStepsWizard').style.display  = 'none';
+    document.getElementById('webResultSteps').style.display  = 'none';
+    document.getElementById('heroSiteType').style.display    = 'none';
+    document.getElementById('heroPagesWrap').style.display   = 'none';
+    document.getElementById('pdfPagesBox').style.display     = 'none';
+}
+
+/* ═══════════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════════ */
+const STORAGE_KEY = SETTINGS.storageKey || 'estimate_v1';
+
+function mkDefault() {
+    return {
+        mode:       'wizard',
+        step:       1,
+        s1:         null,
+        s2:         { s2_top: 1 },
+        s3:         {},
+        s4v:        { s4_resp: true, s4_seo: true },
+        s4f:        {},
+        sfree:      {},
+        heroFrozen: !IS_FLEX,   // flex: 最初から表示 / web: Step1通過後に表示
+        lpSections: 0,
+    };
+}
+
+let ST = mkDefault();
+
+/* ═══════════════════════════════════════════════════════════
+   PERSISTENCE
+═══════════════════════════════════════════════════════════ */
+function persist() {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+            mode: ST.mode, step: ST.step,
+            s1: ST.s1, s2: ST.s2, s3: ST.s3,
+            s4v: ST.s4v, s4f: ST.s4f,
+            sfree: ST.sfree,
+            heroFrozen: ST.heroFrozen,
+            lpSections: ST.lpSections,
+        }));
+        flashSave();
+    } catch(_){}
+}
+
+function hydrate() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return false;
+        const d = JSON.parse(raw);
+        Object.assign(ST, {
+            mode:       d.mode       || 'wizard',
+            step:       d.step       || 1,
+            s1:         d.s1         || null,
+            s2:         d.s2         || { s2_top: 1 },
+            s3:         d.s3         || {},
+            s4v:        d.s4v        || { s4_resp: true, s4_seo: true },
+            s4f:        d.s4f        || {},
+            sfree:      d.sfree      || {},
+            heroFrozen: d.heroFrozen !== undefined ? d.heroFrozen : !IS_FLEX,
+            lpSections: d.lpSections || 0,
+        });
+        if (!ST.s2.s2_top) ST.s2.s2_top = 1;
+        return true;
+    } catch(_){ return false; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CALCULATION
+═══════════════════════════════════════════════════════════ */
+function isLP() {
+    const it = STEP1_ITEMS.find(x => x.id === ST.s1);
+    return !!(it && it.isLP);
+}
+
+function pageCount() {
+    if (IS_FLEX) return 0;
+    if (isLP()) return 1;
+    let n = 0;
+    for (const cat of STEP2_CATS)
+        for (const it of cat.items)
+            if ((ST.s2[it.id] || 0) > 0)
+                n += (ST.s2[it.id] || 1) * it.pages;
+    return n;
+}
+
+function calcTotals() {
+    let prod = 0;
+
+    if (!IS_FLEX) {
+        // Web制作版：Step1〜4 の計算
+        const pc  = pageCount();
+        const lp  = isLP();
+        const sec = ST.lpSections || 0;
+
+        for (const cat of STEP2_CATS) {
+            for (const it of cat.items) {
+                const qty = ST.s2[it.id] || 0;
+                if (qty <= 0) continue;
+                const price = (it.id === 's2_top')
+                    ? (lp ? _S2_TOP_LP : _S2_TOP_STD)
+                    : it.price;
+                prod += qty * price;
+            }
+        }
+
+        if (lp) prod += sec * _LP_SEC;
+
+        for (const it of STEP3_ITEMS)
+            prod += (ST.s3[it.id] || 0) * it.price;
+
+        if (lp) {
+            if (ST.s4v['s4_resp']) prod += 20000 + sec * 1000;
+            if (ST.s4v['s4_seo'])  prod += 3000;
+        } else {
+            for (const v of STEP4_VAR)
+                if (ST.s4v[v.id]) prod += v.unitPrice * pc;
+        }
+
+        for (const f of STEP4_FIX)
+            if (ST.s4f[f.id]) prod += f.price;
+    }
+
+    // フリーStep（両モード共通）
+    for (const fs of (FREE_STEPS || [])) {
+        const sel = ST.sfree[fs.id] || {};
+        for (const it of (fs.items || []))
+            if (sel[it.id]) prod += it.price;
+    }
+
+    const dType = SETTINGS.directionFeeType  || 'percent';
+    const dVal  = parseFloat(SETTINGS.directionFeeValue ?? 10);
+    const tRate = parseFloat(SETTINGS.taxRate ?? 10);
+    let dir = 0;
+    if      (dType === 'percent') dir = Math.round(prod * dVal / 100);
+    else if (dType === 'fixed')   dir = Math.round(dVal);
+    const excl = prod + dir;
+    const incl = Math.round(excl * (1 + tRate / 100));
+    const pc   = pageCount();
+    return { prod, dir, excl, incl, pc };
+}
+
+/* ═══════════════════════════════════════════════════════════
+   UTILITIES
+═══════════════════════════════════════════════════════════ */
+function yen(n) { return '¥' + n.toLocaleString('ja-JP'); }
+
+function bump(el) {
+    if (!el) return;
+    el.classList.remove('bump');
+    void el.offsetWidth;
+    el.classList.add('bump');
+    setTimeout(() => el.classList.remove('bump'), 160);
+}
+
+const $saveInd = document.getElementById('saveIndicator');
+function flashSave() {
+    $saveInd.style.opacity = '1';
+    $saveInd.classList.remove('save-dot');
+    void $saveInd.offsetWidth;
+    $saveInd.classList.add('save-dot');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   HERO
+═══════════════════════════════════════════════════════════ */
+function refreshHero(label) {
+    const $total = document.getElementById('heroTotal');
+    const $ex    = document.getElementById('heroTotalEx');
+    const $pg    = document.getElementById('heroPages');
+    const $lbl   = document.getElementById('heroStepLabel');
+
+    if (label !== undefined) $lbl.textContent = label;
+
+    // サイトタイプ表示（web モードのみ）
+    if (!IS_FLEX) {
+        const $siteType = document.getElementById('heroSiteType');
+        if ($siteType) {
+            const s1it = STEP1_ITEMS.find(x => x.id === ST.s1);
+            if (s1it) {
+                $siteType.textContent = s1it.label;
+                $siteType.classList.remove('hidden');
+            } else {
+                $siteType.classList.add('hidden');
+            }
+        }
+    }
+
+    /* 税率0%時は「税抜」サブテキスト部分を非表示 */
+    const _heroTRate = parseFloat(SETTINGS.taxRate ?? 10);
+    const $heroTaxWrap = document.getElementById('heroTaxExWrap');
+    if ($heroTaxWrap) $heroTaxWrap.style.display = (_heroTRate === 0) ? 'none' : '';
+
+    if (ST.heroFrozen) {
+        $total.textContent = '¥0';
+        $ex.textContent    = '¥0';
+        if ($pg) $pg.textContent = '–';
+        return;
+    }
+
+    const { excl, incl, pc } = calcTotals();
+    const fi = yen(incl), fe = yen(excl), fp = pc > 0 ? `約${pc}ページ` : '–';
+
+    if ($total.textContent !== fi) { $total.textContent = fi; bump($total); }
+    if ($ex.textContent    !== fe) { $ex.textContent    = fe; bump($ex); }
+    if ($pg && $pg.textContent !== fp) { $pg.textContent = fp; bump($pg); }
+
+    if (!IS_FLEX) {
+        document.querySelectorAll('.s4-sub').forEach(el => {
+            el.textContent = s4VarSubText(el.dataset.vid || '');
+        });
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PROGRESS
+═══════════════════════════════════════════════════════════ */
+function totalStepCount() {
+    return IS_FLEX
+        ? (FREE_STEPS ? FREE_STEPS.length : 0)
+        : 4 + (FREE_STEPS ? FREE_STEPS.length : 0);
+}
+
+function refreshProgress(n, total) {
+    const t = total || totalStepCount();
+    document.getElementById('progressBar').style.width = ((n - 1) / t * 100) + '%';
+    document.getElementById('progressLabel').textContent = `${n - 1} / ${t} 完了`;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   QUANTITY COUNTER
+═══════════════════════════════════════════════════════════ */
+function mkCounter(stateMap, id, initQty, maxQty, onChange) {
+    const wrap = document.createElement('div');
+    wrap.className = 'qty-wrap';
+    wrap.style.display = initQty > 0 ? 'flex' : 'none';
+
+    const btnM  = document.createElement('button');
+    const valEl = document.createElement('span');
+    const btnP  = document.createElement('button');
+
+    btnM.type = btnP.type = 'button';
+    btnM.className = btnP.className = 'qty-btn';
+    valEl.className = 'qty-val';
+    btnM.textContent = '−';
+    btnP.textContent = '+';
+
+    function draw(q) {
+        valEl.textContent = q;
+        btnM.disabled = (q <= 1);
+        btnP.disabled = maxQty != null && q >= maxQty;
+    }
+    draw(initQty > 0 ? initQty : 1);
+
+    btnM.addEventListener('click', e => {
+        e.stopPropagation();
+        const q = (stateMap[id] || 1) - 1;
+        if (q < 1) return;
+        stateMap[id] = q; draw(q); onChange();
+    });
+    btnP.addEventListener('click', e => {
+        e.stopPropagation();
+        if (maxQty != null && (stateMap[id] || 1) >= maxQty) return;
+        const q = (stateMap[id] || 1) + 1;
+        stateMap[id] = q; draw(q); onChange();
+    });
+
+    wrap.append(btnM, valEl, btnP);
+    return wrap;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   BUILD STEP 1（web モードのみ）
+═══════════════════════════════════════════════════════════ */
+function buildS1(containerId, resultMode) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+
+    for (const it of STEP1_ITEMS) {
+        const sel = ST.s1 === it.id;
+        const lbl = document.createElement('label');
+        lbl.className = 'opt-card' + (sel ? ' opt-card--selected' : '');
+
+        const inp = document.createElement('input');
+        inp.type = 'radio';
+        inp.name = containerId + '_s1';
+        inp.value = it.id;
+        inp.checked = sel;
+
+        const spanWrap = document.createElement('div');
+        spanWrap.className = 'opt-card__text-wrap';
+
+        const span = document.createElement('span');
+        span.className = 'opt-card__name' + (sel ? ' opt-card__name--active' : '');
+        span.textContent = it.label;
+        spanWrap.appendChild(span);
+
+        if (it.sub) {
+            const subSpan = document.createElement('span');
+            subSpan.className = 'opt-card__sub';
+            subSpan.textContent = it.sub;
+            spanWrap.appendChild(subSpan);
+        }
+
+        inp.addEventListener('change', () => {
+            const prevWasLP = isLP();
+            ST.s1 = it.id;
+            const nowIsLP = isLP();
+
+            if (prevWasLP !== nowIsLP) {
+                ST.s2 = { s2_top: 1 };
+                ST.lpSections = 0;
+            }
+            if (resultMode) ST.heroFrozen = false;
+            const nextBtn = document.getElementById('step1Next');
+            if (nextBtn) nextBtn.disabled = false;
+
+            if (resultMode) {
+                buildS1(containerId, true);
+                buildS2('r2Options', true);
+                buildS4('r4Options');
+                refreshHero('調整モード');
+                persist();
+            } else {
+                buildS1(containerId, false);
+                refreshHero('Step 1 / ' + totalStepCount());
+                persist();
+            }
+        });
+
+        lbl.append(inp, spanWrap);
+
+        if (it.isLP) {
+            const badge = document.createElement('span');
+            badge.className = 'badge-lp';
+            badge.textContent = '1ページ固定';
+            lbl.append(badge);
+        }
+
+        container.appendChild(lbl);
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   BUILD STEP 2（web モードのみ）
+═══════════════════════════════════════════════════════════ */
+function buildS2(optId, resultMode) {
+    const container = document.getElementById(optId);
+    container.innerHTML = '';
+    const lp = isLP();
+
+    if (lp) {
+        const note = document.createElement('div');
+        note.className = 'lp-note';
+        note.innerHTML = `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><p>LPはトップページのみ選択できます。</p>`;
+        container.appendChild(note);
+    }
+
+    if (lp) {
+        const topCat = STEP2_CATS[0];
+        const catWrap = document.createElement('div');
+        const catHead = document.createElement('div');
+        catHead.className = 'cat-label';
+        catHead.textContent = topCat.label;
+        catWrap.appendChild(catHead);
+
+        const list = document.createElement('div');
+        list.style.display = 'flex';
+        list.style.flexDirection = 'column';
+        list.style.gap = '8px';
+
+        const it = topCat.items[0];
+        ST.s2[it.id] = ST.s2[it.id] || 1;
+
+        const lbl = document.createElement('label');
+        lbl.className = 'opt-card opt-card--required';
+
+        const icon = document.createElement('div');
+        icon.innerHTML = `<svg style="width:16px;height:16px;color:var(--color-primary);flex-shrink:0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>`;
+        lbl.appendChild(icon.firstElementChild);
+
+        const nameEl = document.createElement('span');
+        nameEl.className = 'opt-card__name opt-card__name--active';
+        nameEl.style.flex = '1';
+        nameEl.textContent = it.label;
+        lbl.appendChild(nameEl);
+
+        const ctr = mkCounter(ST.s2, it.id, ST.s2[it.id] || 1, it.maxQty || null, () => { refreshHero(); persist(); });
+        ctr.style.display = 'flex';
+        lbl.appendChild(ctr);
+
+        list.appendChild(lbl);
+        catWrap.appendChild(list);
+        container.appendChild(catWrap);
+
+        const secWrap = document.createElement('div');
+        const secHead = document.createElement('div');
+        secHead.className = 'cat-label';
+        secHead.textContent = 'セクション追加';
+        secWrap.appendChild(secHead);
+
+        const secCard = document.createElement('div');
+        secCard.className = 'opt-card opt-card--required';
+        secCard.style.cursor = 'default';
+
+        const secIcon = document.createElement('div');
+        secIcon.innerHTML = `<svg style="width:16px;height:16px;color:var(--color-primary);flex-shrink:0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>`;
+        secCard.appendChild(secIcon.firstElementChild);
+
+        const secText = document.createElement('div');
+        secText.className = 'opt-card__text-wrap';
+        const secName = document.createElement('span');
+        secName.className = 'opt-card__name opt-card__name--active';
+        secName.textContent = 'セクションを追加する';
+        const secSub = document.createElement('span');
+        secSub.className = 'opt-card__sub';
+        secSub.textContent = `基本5セクション含む・追加セクション数量指定可`;
+        secText.append(secName, secSub);
+        secCard.appendChild(secText);
+
+        if (ST.lpSections == null) ST.lpSections = 0;
+
+        const secCtrWrap = document.createElement('div');
+        secCtrWrap.className = 'qty-wrap';
+
+        const btnM = document.createElement('button');
+        const valEl = document.createElement('span');
+        const btnP = document.createElement('button');
+        btnM.type = btnP.type = 'button';
+        btnM.className = btnP.className = 'qty-btn';
+        valEl.className = 'qty-val';
+        btnM.textContent = '−';
+        btnP.textContent = '+';
+
+        function drawSec(q) {
+            valEl.textContent = q;
+            btnM.disabled = (q <= 0);
+        }
+        drawSec(ST.lpSections);
+
+        btnM.addEventListener('click', e => {
+            e.stopPropagation();
+            if (ST.lpSections <= 0) return;
+            ST.lpSections--;
+            drawSec(ST.lpSections);
+            refreshHero(); persist();
+        });
+        btnP.addEventListener('click', e => {
+            e.stopPropagation();
+            ST.lpSections++;
+            drawSec(ST.lpSections);
+            refreshHero(); persist();
+        });
+
+        secCtrWrap.append(btnM, valEl, btnP);
+        secCard.appendChild(secCtrWrap);
+        secWrap.appendChild(secCard);
+        container.appendChild(secWrap);
+        return;
+    }
+
+    for (const cat of STEP2_CATS) {
+        const catWrap = document.createElement('div');
+        const catHead = document.createElement('div');
+        catHead.className = 'cat-label';
+        catHead.textContent = cat.label;
+        catWrap.appendChild(catHead);
+
+        const list = document.createElement('div');
+        list.style.display = 'flex';
+        list.style.flexDirection = 'column';
+        list.style.gap = '8px';
+
+        for (const it of cat.items) {
+            const isReq   = !!it.required;
+            const qty     = ST.s2[it.id] || 0;
+            const checked = qty > 0;
+
+            const lbl = document.createElement('label');
+            lbl.className = 'opt-card'
+                + (isReq ? ' opt-card--required' : '')
+                + ((!isReq && checked) ? ' opt-card--selected' : '');
+
+            if (isReq) {
+                const icon = document.createElement('div');
+                icon.innerHTML = `<svg style="width:16px;height:16px;color:var(--color-primary);flex-shrink:0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>`;
+                lbl.appendChild(icon.firstElementChild);
+                ST.s2[it.id] = ST.s2[it.id] || 1;
+            } else {
+                const chk = document.createElement('input');
+                chk.type = 'checkbox';
+                chk.checked = checked;
+
+                chk.addEventListener('change', () => {
+                    if (chk.checked) {
+                        ST.s2[it.id] = 1;
+                        ctr.style.display = 'flex';
+                        ctr.querySelector('.qty-val').textContent = 1;
+                        lbl.classList.add('opt-card--selected');
+                        nameEl.className = 'opt-card__name opt-card__name--active';
+                        if (it.id === 's2_contact' && !ST.s3['s3_form']) {
+                            ST.s3['s3_form'] = 1;
+                            rebuildS3IfVisible();
+                        }
+                    } else {
+                        ST.s2[it.id] = 0;
+                        ctr.style.display = 'none';
+                        lbl.classList.remove('opt-card--selected');
+                        nameEl.className = 'opt-card__name';
+                    }
+                    refreshHero(); persist();
+                });
+                lbl.appendChild(chk);
+            }
+
+            const nameEl = document.createElement('span');
+            nameEl.className = 'opt-card__name' + ((isReq || checked) ? ' opt-card__name--active' : '');
+            nameEl.textContent = it.label;
+
+            if (it.sub) {
+                const tw = document.createElement('div');
+                tw.className = 'opt-card__text-wrap';
+                tw.style.flex = '1';
+                const subEl = document.createElement('span');
+                subEl.className = 'opt-card__sub';
+                subEl.textContent = it.sub;
+                tw.append(nameEl, subEl);
+                lbl.appendChild(tw);
+            } else {
+                nameEl.style.flex = '1';
+                lbl.appendChild(nameEl);
+            }
+
+            const ctr = mkCounter(ST.s2, it.id, isReq ? (ST.s2[it.id] || 1) : qty,
+                it.maxQty || null, () => { refreshHero(); persist(); });
+            if (isReq) ctr.style.display = 'flex';
+            lbl.appendChild(ctr);
+
+            list.appendChild(lbl);
+        }
+
+        catWrap.appendChild(list);
+        container.appendChild(catWrap);
+    }
+}
+
+function rebuildS3IfVisible() {
+    if (ST.mode === 'result') {
+        buildS3('r3Options');
+    } else if (!document.getElementById('step3Panel').classList.contains('hidden')) {
+        buildS3('step3Options');
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   BUILD STEP 3（web モードのみ）
+═══════════════════════════════════════════════════════════ */
+function buildS3(containerId) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+
+    for (const it of STEP3_ITEMS) {
+        const qty     = ST.s3[it.id] || 0;
+        const checked = qty > 0;
+
+        const lbl = document.createElement('label');
+        lbl.className = 'opt-card' + (checked ? ' opt-card--selected' : '');
+
+        const chk = document.createElement('input');
+        chk.type = 'checkbox';
+        chk.checked = checked;
+
+        const nameEl = document.createElement('span');
+        nameEl.className = 'opt-card__name' + (checked ? ' opt-card__name--active' : '');
+        nameEl.textContent = it.label;
+
+        const ctr = mkCounter(ST.s3, it.id, qty, null, () => { refreshHero(); persist(); });
+
+        chk.addEventListener('change', () => {
+            if (chk.checked) {
+                ST.s3[it.id] = 1;
+                ctr.style.display = 'flex';
+                ctr.querySelector('.qty-val').textContent = 1;
+                lbl.classList.add('opt-card--selected');
+                nameEl.className = 'opt-card__name opt-card__name--active';
+            } else {
+                ST.s3[it.id] = 0;
+                ctr.style.display = 'none';
+                lbl.classList.remove('opt-card--selected');
+                nameEl.className = 'opt-card__name';
+            }
+            refreshHero(); persist();
+        });
+
+        if (it.sub) {
+            const tw = document.createElement('div');
+            tw.className = 'opt-card__text-wrap';
+            tw.style.flex = '1';
+            const subEl = document.createElement('span');
+            subEl.className = 'opt-card__sub';
+            subEl.textContent = it.sub;
+            tw.append(nameEl, subEl);
+            lbl.append(chk, tw, ctr);
+        } else {
+            nameEl.style.flex = '1';
+            lbl.append(chk, nameEl, ctr);
+        }
+        container.appendChild(lbl);
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   BUILD STEP 4（web モードのみ）
+═══════════════════════════════════════════════════════════ */
+function s4VarSubText(vid) {
+    const lp = isLP();
+    if (lp) return vid === 's4_resp' ? 'LP・追加セクション数に応じて加算' : 'LP一式';
+    return `${pageCount()}ページ分`;
+}
+
+function buildS4(containerId) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+
+    for (const v of STEP4_VAR) {
+        const on = !!ST.s4v[v.id];
+        const lbl = document.createElement('label');
+        lbl.className = 'opt-card' + (on ? ' opt-card--selected' : '');
+
+        const chk = document.createElement('input');
+        chk.type = 'checkbox';
+        chk.checked = on;
+
+        const tw = document.createElement('div');
+        tw.className = 'opt-card__text-wrap';
+
+        const nm = document.createElement('span');
+        nm.className = 'opt-card__name' + (on ? ' opt-card__name--active' : '');
+        nm.textContent = v.label;
+
+        const sub = document.createElement('span');
+        sub.className = 'opt-card__sub s4-sub';
+        sub.dataset.vid = v.id;
+        sub.textContent = s4VarSubText(v.id);
+
+        tw.append(nm, sub);
+
+        chk.addEventListener('change', () => {
+            ST.s4v[v.id] = chk.checked;
+            lbl.classList.toggle('opt-card--selected', chk.checked);
+            nm.className = 'opt-card__name' + (chk.checked ? ' opt-card__name--active' : '');
+            refreshHero(); persist();
+        });
+
+        lbl.append(chk, tw);
+        container.appendChild(lbl);
+    }
+
+    for (const f of STEP4_FIX) {
+        const on = !!ST.s4f[f.id];
+        const lbl = document.createElement('label');
+        lbl.className = 'opt-card' + (on ? ' opt-card--selected' : '');
+
+        const chk = document.createElement('input');
+        chk.type = 'checkbox';
+        chk.checked = on;
+
+        const nm = document.createElement('span');
+        nm.className = 'opt-card__name' + (on ? ' opt-card__name--active' : '');
+        nm.textContent = f.label;
+
+        chk.addEventListener('change', () => {
+            ST.s4f[f.id] = chk.checked;
+            lbl.classList.toggle('opt-card--selected', chk.checked);
+            nm.className = 'opt-card__name' + (chk.checked ? ' opt-card__name--active' : '');
+            refreshHero(); persist();
+        });
+
+        nm.style.flex = '1';
+        lbl.append(chk, nm);
+        container.appendChild(lbl);
+    }
+
+    // ディレクション費カード
+    const _dType = SETTINGS.directionFeeType || 'percent';
+    const _dVal  = parseFloat(SETTINGS.directionFeeValue ?? 10);
+    if (_dType !== 'none') {
+        const _dirLabel = _dType === 'percent'
+            ? `プロジェクト進行・ディレクション費（${_dVal}%）`
+            : 'プロジェクト進行・ディレクション費';
+        const dir = document.createElement('div');
+        dir.className = 'dir-card';
+        dir.innerHTML = `
+            <div class="dir-card__inner">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                </svg>
+                <div style="flex:1;">
+                    <p class="dir-card__title">${_dirLabel}</p>
+                    <p class="dir-card__desc">制作の進行管理、品質チェック、技術的な要件定義など、プロジェクトを円滑に進めるための必須費用です。</p>
+                </div>
+                <span class="dir-card__badge">必須</span>
+            </div>`;
+        container.appendChild(dir);
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   フリーStep ビルド
+   flex:  Step 1, 2, 3...（FREE_STEP_OFFSET = 0）
+   web:   Step 5, 6, 7...（FREE_STEP_OFFSET = 4）
+═══════════════════════════════════════════════════════════ */
+function buildFreeStepsHTML() {
+    const container = document.getElementById('freeStepsContainer');
+    container.innerHTML = '';
+    if (!FREE_STEPS || !FREE_STEPS.length) return;
+
+    FREE_STEPS.forEach((fs, idx) => {
+        const stepNum = FREE_STEP_OFFSET + idx + 1;
+        const panel = document.createElement('div');
+        panel.className = 'panel hidden';
+        panel.id = `freeStep_${fs.id}_panel`;
+
+        const isLast = idx === FREE_STEPS.length - 1;
+        // flex モードの最初のステップは「戻る」ボタン不要
+        const showBack = !(IS_FLEX && idx === 0);
+
+        panel.innerHTML = `
+            <div class="panel__head">
+                <div class="panel__head-left">
+                    <span class="step-badge">Step ${stepNum}</span>
+                    <span class="step-label">${fs.title || 'カスタムオプション'}</span>
+                </div>
+                <span class="panel__head-hint">複数選択</span>
+            </div>
+            <div class="panel__body panel__body--gap" id="freeStep_${fs.id}_options"></div>
+            <div class="panel__footer">
+                <div class="btn-row">
+                    ${showBack ? `<button class="btn-secondary free-step-back" data-fsid="${fs.id}">← 戻る</button>` : ''}
+                    <button class="btn-primary free-step-next" data-fsid="${fs.id}" data-last="${isLast}">
+                        ${isLast ? '見積もり結果を見る ✓' : '次へ →'}
+                    </button>
+                </div>
+            </div>`;
+        container.appendChild(panel);
+    });
+
+    // ナビゲーションイベント
+    container.querySelectorAll('.free-step-back').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const fsid = btn.dataset.fsid;
+            const idx  = FREE_STEPS.findIndex(f => f.id === fsid);
+            if (idx === 0) {
+                // web モードのみここに到達（flex の先頭は back ボタンなし）
+                showWizardStep(4);
+            } else {
+                showWizardFreeStep(FREE_STEPS[idx - 1].id);
+            }
+        });
+    });
+    container.querySelectorAll('.free-step-next').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const fsid = btn.dataset.fsid;
+            const idx  = FREE_STEPS.findIndex(f => f.id === fsid);
+            if (btn.dataset.last === 'true') {
+                switchToResult();
+            } else {
+                showWizardFreeStep(FREE_STEPS[idx + 1].id);
+            }
+        });
+    });
+}
+
+function buildFreeStepOptions(fsid, resultMode) {
+    const fs = FREE_STEPS.find(f => f.id === fsid);
+    if (!fs) return;
+    const optId = resultMode ? `rfreeStep_${fsid}_options` : `freeStep_${fsid}_options`;
+    const container = document.getElementById(optId);
+    if (!container) return;
+    container.innerHTML = '';
+
+    if (!ST.sfree[fsid]) ST.sfree[fsid] = {};
+
+    for (const it of (fs.items || [])) {
+        const on  = !!ST.sfree[fsid][it.id];
+        const lbl = document.createElement('label');
+        lbl.className = 'opt-card' + (on ? ' opt-card--selected' : '');
+
+        const chk = document.createElement('input');
+        chk.type = 'checkbox';
+        chk.checked = on;
+
+        const tw = document.createElement('div');
+        tw.className = 'opt-card__text-wrap';
+
+        const nm = document.createElement('span');
+        nm.className = 'opt-card__name' + (on ? ' opt-card__name--active' : '');
+        nm.textContent = it.label;
+
+        tw.append(nm);
+        if (it.sub) {
+            const subEl = document.createElement('span');
+            subEl.className = 'opt-card__sub';
+            subEl.textContent = it.sub;
+            tw.append(subEl);
+        }
+
+        chk.addEventListener('change', () => {
+            ST.sfree[fsid][it.id] = chk.checked;
+            lbl.classList.toggle('opt-card--selected', chk.checked);
+            nm.className = 'opt-card__name' + (chk.checked ? ' opt-card__name--active' : '');
+            refreshHero(); persist();
+        });
+
+        lbl.append(chk, tw);
+        container.appendChild(lbl);
+    }
+}
+
+function showWizardFreeStep(fsid) {
+    // web ステップパネルを非表示
+    if (!IS_FLEX) {
+        [1,2,3,4].forEach(i => document.getElementById(`step${i}Panel`).classList.add('hidden'));
+    }
+    document.getElementById('freeStepsContainer').querySelectorAll('.panel').forEach(p => p.classList.add('hidden'));
+
+    const panel = document.getElementById(`freeStep_${fsid}_panel`);
+    if (panel) panel.classList.remove('hidden');
+
+    buildFreeStepOptions(fsid, false);
+
+    const idx     = FREE_STEPS.findIndex(f => f.id === fsid);
+    const stepNum = FREE_STEP_OFFSET + idx + 1;
+    const total   = totalStepCount();
+    ST.step = stepNum;
+    refreshProgress(stepNum, total);
+    refreshHero(`Step ${stepNum} / ${total}`);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   WIZARD NAVIGATION（web モードのみ使用）
+═══════════════════════════════════════════════════════════ */
+function showWizardStep(n) {
+    const total = totalStepCount();
+    [1,2,3,4].forEach(i => {
+        document.getElementById(`step${i}Panel`).classList.toggle('hidden', i !== n);
+    });
+    if (FREE_STEPS) {
+        FREE_STEPS.forEach(fs => {
+            const p = document.getElementById(`freeStep_${fs.id}_panel`);
+            if (p) p.classList.add('hidden');
+        });
+    }
+    ST.step = n;
+    refreshProgress(n, total);
+    refreshHero(`Step ${n} / ${total}`);
+}
+
+// web モードのステップナビゲーション
+if (!IS_FLEX) {
+    document.getElementById('step1Next').addEventListener('click', () => {
+        if (!ST.s1) return;
+        ST.heroFrozen = false;
+        buildS2('step2Options', false);
+        showWizardStep(2);
+        persist();
+    });
+
+    document.getElementById('step2Back').addEventListener('click', () => showWizardStep(1));
+    document.getElementById('step2Next').addEventListener('click', () => {
+        buildS3('step3Options');
+        showWizardStep(3);
+    });
+
+    document.getElementById('step3Back').addEventListener('click', () => {
+        buildS2('step2Options', false);
+        showWizardStep(2);
+    });
+    document.getElementById('step3Next').addEventListener('click', () => {
+        buildS4('step4Options');
+        showWizardStep(4);
+    });
+
+    document.getElementById('step4Back').addEventListener('click', () => {
+        buildS3('step3Options');
+        showWizardStep(3);
+    });
+    document.getElementById('step4Finish').addEventListener('click', () => {
+        if (FREE_STEPS && FREE_STEPS.length > 0) {
+            showWizardFreeStep(FREE_STEPS[0].id);
+        } else {
+            switchToResult();
+        }
+    });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MODE SWITCH
+═══════════════════════════════════════════════════════════ */
+function switchToResult() {
+    ST.mode = 'result';
+    ST.heroFrozen = false;
+    document.getElementById('wizardMode').classList.add('hidden');
+    const rm = document.getElementById('resultMode');
+    rm.classList.remove('hidden', 'result-section');
+    void rm.offsetWidth;
+    rm.classList.add('result-section');
+    buildResultMode();
+    persist();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function switchToWizard(doReset) {
+    if (doReset) {
+        ST = mkDefault();
+        try { localStorage.removeItem(STORAGE_KEY); } catch(_){}
+    }
+    ST.mode = 'wizard';
+    document.getElementById('resultMode').classList.add('hidden');
+    document.getElementById('wizardMode').classList.remove('hidden');
+
+    if (IS_FLEX) {
+        if (FREE_STEPS && FREE_STEPS.length > 0) {
+            showWizardFreeStep(FREE_STEPS[0].id);
+        }
+    } else {
+        buildS1('step1Options', false);
+        document.getElementById('step1Next').disabled = !ST.s1;
+        showWizardStep(ST.step || 1);
+    }
+
+    persist();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RESULT MODE
+═══════════════════════════════════════════════════════════ */
+function buildResultMode() {
+    if (!IS_FLEX) {
+        buildS1('r1Options', true);
+        buildS2('r2Options', true);
+        buildS3('r3Options');
+        buildS4('r4Options');
+    }
+
+    const rContainer = document.getElementById('rFreeStepsContainer');
+    if (rContainer) {
+        rContainer.innerHTML = '';
+        if (FREE_STEPS && FREE_STEPS.length > 0) {
+            FREE_STEPS.forEach((fs, idx) => {
+                const stepNum = FREE_STEP_OFFSET + idx + 1;
+                const panel = document.createElement('div');
+                panel.className = 'panel';
+                panel.style.marginTop = '16px';
+                panel.innerHTML = `
+                    <div class="panel__head">
+                        <div class="panel__head-left">
+                            <span class="step-badge">Step ${stepNum}</span>
+                            <span class="step-label">${fs.title || 'カスタムオプション'}</span>
+                        </div>
+                        <span class="panel__head-hint">複数選択</span>
+                    </div>
+                    <div class="panel__body panel__body--gap" id="rfreeStep_${fs.id}_options"></div>`;
+                rContainer.appendChild(panel);
+                buildFreeStepOptions(fs.id, true);
+            });
+        }
+    }
+
+    refreshHero('調整モード');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   COPY TEXT
+═══════════════════════════════════════════════════════════ */
+function buildCopyText() {
+    const { prod, dir, excl, incl, pc } = calcTotals();
+    const lp  = IS_FLEX ? false : isLP();
+    const sec = ST.lpSections || 0;
+    const S   = SETTINGS;
+    const lines = [];
+
+    lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    lines.push('　　概算お見積り');
+    lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    lines.push('');
+
+    if (!IS_FLEX) {
+        const s1it = STEP1_ITEMS.find(x => x.id === ST.s1);
+        lines.push('■ サイトタイプ');
+        lines.push(`　${s1it ? s1it.label : '未選択'}`);
+        lines.push('');
+
+        lines.push('■ ページ構成');
+        for (const cat of STEP2_CATS) {
+            for (const it of cat.items) {
+                const qty = ST.s2[it.id] || 0;
+                if (qty <= 0) continue;
+                const price = (it.id === 's2_top')
+                    ? (lp ? _S2_TOP_LP : _S2_TOP_STD)
+                    : it.price;
+                lines.push(`　・${it.label}　×${qty}　${yen(qty * price)}`);
+            }
+        }
+        if (lp && sec > 0)
+            lines.push(`　・セクション追加（${sec}セクション）　${yen(sec * _LP_SEC)}`);
+        lines.push('');
+
+        const s3sel = STEP3_ITEMS.filter(x => (ST.s3[x.id] || 0) > 0);
+        if (s3sel.length) {
+            lines.push('■ 機能・演出');
+            s3sel.forEach(x => {
+                const qty = ST.s3[x.id];
+                lines.push(`　・${x.label}　×${qty}　${yen(qty * x.price)}`);
+            });
+            lines.push('');
+        }
+
+        lines.push('■ システム・設定');
+        for (const v of STEP4_VAR) {
+            if (!ST.s4v[v.id]) continue;
+            let cost, note;
+            if (lp) {
+                cost = (v.id === 's4_resp') ? 20000 + sec * 1000 : 3000;
+                note = '一式';
+            } else {
+                cost = v.unitPrice * pc;
+                note = `${pc}ページ`;
+            }
+            lines.push(`　・${v.label}　${note}　${yen(cost)}`);
+        }
+        for (const f of STEP4_FIX) {
+            if (!ST.s4f[f.id]) continue;
+            lines.push(`　・${f.label}　×1　${yen(f.price)}`);
+        }
+        lines.push('');
+    }
+
+    // フリーStep
+    const freeSelected = (FREE_STEPS || []).filter(fs => {
+        const sel = ST.sfree[fs.id] || {};
+        return (fs.items || []).some(it => sel[it.id]);
+    });
+    if (freeSelected.length) {
+        freeSelected.forEach(fs => {
+            lines.push(`■ ${fs.title}`);
+            const sel = ST.sfree[fs.id] || {};
+            (fs.items || []).forEach(it => {
+                if (!sel[it.id]) return;
+                lines.push(`　・${it.label}　×1　${yen(it.price)}`);
+            });
+            lines.push('');
+        });
+    }
+
+    lines.push('────────────────────────────────────');
+    lines.push(`　制作費小計　　${yen(prod)}`);
+    if (dir > 0) {
+        const _cDType = SETTINGS.directionFeeType || 'percent';
+        const _cDVal  = parseFloat(SETTINGS.directionFeeValue ?? 10);
+        const _cDLbl  = _cDType === 'percent'
+            ? `プロジェクト進行・ディレクション費（${_cDVal}%）`
+            : 'プロジェクト進行・ディレクション費';
+        lines.push(`　${_cDLbl}　${yen(dir)}`);
+    }
+    const _cTRate = parseFloat(SETTINGS.taxRate ?? 10);
+    if (_cTRate > 0) {
+        lines.push(`　税抜合計　　　${yen(excl)}`);
+        if (incl - excl > 0) lines.push(`　消費税（${_cTRate}%）　${yen(incl - excl)}`);
+    }
+    lines.push('────────────────────────────────────');
+    lines.push(`　合計金額${_cTRate > 0 ? '（税込）' : ''}　${yen(incl)}`);
+    lines.push('────────────────────────────────────');
+    lines.push('');
+    lines.push('※ 本見積りはシミュレーターによる概算です。');
+    lines.push('　 実際の費用はヒアリング後に正式なお見積りをご提示します。');
+
+    return lines.join('\n');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ACTION BUTTONS
+═══════════════════════════════════════════════════════════ */
+document.getElementById('btnConsult').addEventListener('click', () => {
+    const url = SETTINGS.contactUrl
+        ? `${SETTINGS.contactUrl}?estimate=${encodeURIComponent(buildCopyText())}`
+        : null;
+    if (url) {
+        window.open(url, '_blank');
+    } else {
+        toast('問い合わせURLが設定されていません。settings.js の contactUrl を設定してください。', 'error');
+    }
+});
+
+document.getElementById('btnCopy').addEventListener('click', async () => {
+    try {
+        await navigator.clipboard.writeText(buildCopyText());
+        toast('お見積り内容をコピーしました');
+    } catch {
+        toast('コピーに失敗しました', 'error');
+    }
+});
+
+document.getElementById('btnReset').addEventListener('click', () => {
+    if (!confirm('選択内容をすべてリセットしてStep 1に戻りますか？')) return;
+    switchToWizard(true);
+    toast('リセットしました', 'info');
+});
+
+document.getElementById('heroResetBtn').addEventListener('click', () => {
+    if (!confirm('選択内容をすべてリセットしてStep 1に戻りますか？')) return;
+    switchToWizard(true);
+    toast('リセットしました', 'info');
+});
+
+/* ═══════════════════════════════════════════════════════════
+   PDF出力
+═══════════════════════════════════════════════════════════ */
+document.getElementById('btnPdf').addEventListener('click', () => {
+    const { prod, dir, excl, incl, pc } = calcTotals();
+    const lp  = IS_FLEX ? false : isLP();
+    const sec = ST.lpSections || 0;
+    const S   = SETTINGS;
+
+    const today = new Date();
+    document.getElementById('pdfDate').textContent =
+        `${today.getFullYear()}年${today.getMonth()+1}月${today.getDate()}日`;
+
+    document.getElementById('pdfTotal').textContent = yen(incl);
+    if (!IS_FLEX) {
+        document.getElementById('pdfPages').textContent = lp ? '1ページ（LP）' : `約${pc}ページ`;
+    }
+
+    document.getElementById('pdfNote').textContent = S.pdfNote || '';
+
+    const tbody = document.getElementById('pdfTbody');
+    tbody.innerHTML = '';
+    const row = (label, qty, price) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${label}</td><td class="td-right">${qty}</td><td class="td-right">${price}</td>`;
+        return tr;
+    };
+
+    if (!IS_FLEX) {
+        const s1it = STEP1_ITEMS.find(x => x.id === ST.s1);
+        if (s1it) tbody.appendChild(row(`【サイトタイプ】${s1it.label}`, '―', '―'));
+
+        for (const cat of STEP2_CATS) {
+            for (const it of cat.items) {
+                const qty = ST.s2[it.id] || 0;
+                if (qty <= 0) continue;
+                const price = (it.id === 's2_top')
+                    ? (lp ? _S2_TOP_LP : _S2_TOP_STD)
+                    : it.price;
+                tbody.appendChild(row(it.label, qty, yen(qty * price)));
+            }
+        }
+        if (lp && sec > 0)
+            tbody.appendChild(row(`セクション追加（${sec}セクション）`, sec, yen(sec * _LP_SEC)));
+
+        for (const it of STEP3_ITEMS) {
+            const qty = ST.s3[it.id] || 0;
+            if (qty <= 0) continue;
+            tbody.appendChild(row(it.label, qty, yen(qty * it.price)));
+        }
+
+        for (const v of STEP4_VAR) {
+            if (!ST.s4v[v.id]) continue;
+            let cost, note;
+            if (lp) {
+                cost = (v.id === 's4_resp') ? 20000 + sec * 1000 : 3000;
+                note = '一式';
+            } else {
+                cost = v.unitPrice * pc;
+                note = `${pc}ページ`;
+            }
+            tbody.appendChild(row(v.label, note, yen(cost)));
+        }
+
+        for (const f of STEP4_FIX) {
+            if (!ST.s4f[f.id]) continue;
+            tbody.appendChild(row(f.label, '1', yen(f.price)));
+        }
+    }
+
+    // フリーStep明細
+    for (const fs of (FREE_STEPS || [])) {
+        const sel = ST.sfree[fs.id] || {};
+        for (const it of (fs.items || [])) {
+            if (!sel[it.id]) continue;
+            tbody.appendChild(row(`【${fs.title}】${it.label}`, '1', yen(it.price)));
+        }
+    }
+
+    // ディレクション費・税関連
+    const _rDType = SETTINGS.directionFeeType || 'percent';
+    const _rDVal  = parseFloat(SETTINGS.directionFeeValue ?? 10);
+    const _rTRate = parseFloat(SETTINGS.taxRate ?? 10);
+    const pdfDirRow = document.getElementById('pdfDirRow');
+    if (pdfDirRow) pdfDirRow.style.display = (_rDType === 'none') ? 'none' : '';
+    const pdfDirLabel = document.getElementById('pdfDirLabel');
+    if (pdfDirLabel) pdfDirLabel.textContent = _rDType === 'percent'
+        ? `プロジェクト進行・ディレクション費（${_rDVal}%）`
+        : 'プロジェクト進行・ディレクション費';
+    const pdfTaxLabel = document.getElementById('pdfTaxLabel');
+    if (pdfTaxLabel) pdfTaxLabel.textContent = `消費税（${_rTRate}%）`;
+
+    document.getElementById('pdfProd').textContent = yen(prod);
+    document.getElementById('pdfDir').textContent  = yen(dir);
+    document.getElementById('pdfExcl').textContent = yen(excl);
+    document.getElementById('pdfTax').textContent  = yen(incl - excl);
+    document.getElementById('pdfIncl').textContent = yen(incl);
+
+    const isTaxFree    = (_rTRate === 0);
+    const pdfExclRow   = document.getElementById('pdfExclRow');
+    const pdfTaxRow    = document.getElementById('pdfTaxRow');
+    const pdfInclLabel = document.getElementById('pdfInclLabel');
+    if (pdfExclRow)   pdfExclRow.style.display   = isTaxFree ? 'none' : '';
+    if (pdfTaxRow)    pdfTaxRow.style.display    = isTaxFree ? 'none' : '';
+    if (pdfInclLabel) pdfInclLabel.textContent   = isTaxFree ? '合計金額' : '税込合計';
+    const pdfTotalExEl = document.getElementById('pdfTotalEx');
+    if (pdfTotalExEl) {
+        pdfTotalExEl.textContent = isTaxFree ? '' : `税抜 ${yen(excl)}`;
+    }
+
+    // フッター署名
+    document.getElementById('pdfSigName').textContent   = S.companyName || '';
+    document.getElementById('pdfSigPerson').textContent = [S.department, S.personName].filter(Boolean).join('　');
+
+    const linksEl = document.getElementById('pdfSigLinks');
+    linksEl.innerHTML = '';
+    const addLink = (label, val) => {
+        if (!val) return;
+        linksEl.innerHTML += `<span>${label}</span>${val}<br>`;
+    };
+    if (S.postalCode || S.address) {
+        linksEl.innerHTML += `<span></span>${[S.postalCode, S.address].filter(Boolean).join('　')}<br>`;
+    }
+    addLink('TEL',   S.tel);
+    addLink('FAX',   S.fax);
+    addLink('Email', S.email);
+    addLink('URL',   S.url);
+    const snsList = Array.isArray(S.sns) ? S.sns : [];
+    for (const sn of snsList) {
+        if (sn.label && sn.url) addLink(sn.label, sn.url);
+    }
+
+    const logoEl = document.getElementById('pdfSigLogo');
+    logoEl.innerHTML = '';
+    if (S.logoBase64) {
+        const img = document.createElement('img');
+        img.src = S.logoBase64;
+        img.alt = S.companyName || '';
+        logoEl.appendChild(img);
+        img.decode().then(() => window.print()).catch(() => window.print());
+    } else {
+        window.print();
+    }
+});
+
+/* ═══════════════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════════════ */
+(function init() {
+    // フリーStepパネルをDOMに生成
+    buildFreeStepsHTML();
+
+    // web モード：Step4 Finish ボタンのラベル調整
+    if (!IS_FLEX && FREE_STEPS && FREE_STEPS.length > 0) {
+        const finBtn = document.getElementById('step4Finish');
+        if (finBtn) finBtn.textContent = '次へ →';
+    }
+
+    hydrate();
+
+    if (ST.mode === 'result') {
+        document.getElementById('wizardMode').classList.add('hidden');
+        document.getElementById('resultMode').classList.remove('hidden');
+        buildResultMode();
+        return;
+    }
+
+    const total = totalStepCount();
+
+    if (IS_FLEX) {
+        // flex モード：最初のフリーStepへ
+        if (FREE_STEPS && FREE_STEPS.length > 0) {
+            const cs    = ST.step || 1;
+            const fsIdx = Math.min(Math.max(cs - 1, 0), FREE_STEPS.length - 1);
+            showWizardFreeStep(FREE_STEPS[fsIdx].id);
+        } else {
+            // フリーStepがない場合は即結果
+            switchToResult();
+        }
+    } else {
+        // web モード：Step1〜4 フロー
+        buildS1('step1Options', false);
+        document.getElementById('step1Next').disabled = !ST.s1;
+
+        const cs = ST.step || 1;
+        if (cs > 4 && FREE_STEPS && FREE_STEPS.length > 0) {
+            const fsIdx = cs - 5;
+            const fs    = FREE_STEPS[fsIdx];
+            if (fs) showWizardFreeStep(fs.id);
+            else    showWizardStep(4);
+        } else {
+            showWizardStep(cs);
+        }
+
+        if (cs >= 2) buildS2('step2Options', false);
+        if (cs >= 3) buildS3('step3Options');
+        if (cs >= 4) buildS4('step4Options');
+
+        refreshHero(`Step ${cs} / ${total}`);
+    }
+})();
+</script>
+
+</body>
+</html>

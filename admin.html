@@ -1,0 +1,1703 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理画面 - 見積もりシミュレーター</title>
+    <link rel="stylesheet" href="./admin.css">
+</head>
+<body>
+
+<div class="wrap">
+
+    <!-- ヘッダー -->
+    <header class="adm-header">
+        <div class="adm-header__badge">ADMIN</div>
+        <h1 class="adm-header__title">設定管理画面</h1>
+        <p class="adm-header__sub">
+            【初回セットアップ】項目・金額・カラー・ロゴを設定し、「ユーザー設定を保存」でJSONファイルをダウンロードしてください。次回以降は「ユーザー設定を読込」でそのJSONを読み込むだけで設定が反映されます。<br>
+            【テンプレート切替】「テンプレートを読込」から <strong>templates/</strong> フォルダ内のJSONを読み込むと、見積もりの種類を切り替えられます。
+        </p>
+        <div class="adm-header__tpl" id="tplBadge" style="display:none">
+            <span class="adm-header__tpl-label">現在のテンプレート：</span>
+            <span class="adm-header__tpl-name" id="tplBadgeName"></span>
+        </div>
+    </header>
+
+
+    <!-- タブ -->
+    <div class="tabs">
+        <button class="tab-btn on" data-tab="tab-basic">① 会社情報・基本設定</button>
+        <button class="tab-btn" data-tab="tab-items" id="tabItemsBtn">② 項目・金額</button>
+        <button class="tab-btn" data-tab="tab-free">③ フリーStep</button>
+    </div>
+
+    <!-- ════════════════════════════════
+         タブ① 会社情報・基本設定
+    ════════════════════════════════ -->
+    <div class="tab-panel on" id="tab-basic">
+
+        <!-- ロゴ -->
+        <div class="card">
+            <div class="card__head">
+                <div class="card__head-left">
+                    <div class="card__icon">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    </div>
+                    <div>
+                        <div class="card__title">ロゴ画像</div>
+                        <div class="card__desc">PDF見積書のフッターに表示。未設定の場合は社名テキストが代わりに表示されます。</div>
+                    </div>
+                </div>
+            </div>
+            <div class="card__body">
+                <div id="logoZone" class="logo-zone" onclick="document.getElementById('logoFile').click()">
+                    <input type="file" id="logoFile" accept="image/png,image/jpeg,image/svg+xml,image/gif,image/webp">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                    <div class="logo-zone__text">クリックまたはドラッグ＆ドロップで画像を選択</div>
+                    <div class="logo-zone__sub">PNG / JPEG / SVG / WebP・推奨サイズ：横300px以上</div>
+                </div>
+                <div id="logoPrev" class="logo-prev hidden">
+                    <img id="logoPrevImg" src="" alt="ロゴプレビュー">
+                    <div class="logo-prev__info">
+                        <div class="logo-prev__name" id="logoName">—</div>
+                        <div class="logo-prev__size" id="logoSize">—</div>
+                        <div class="logo-prev__msg">✅ ロゴが設定されました。「ユーザー設定を保存」するとJSONに保存されます。</div>
+                    </div>
+                    <button class="btn-rm-logo" id="btnRmLogo">削除</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 会社情報 -->
+        <div class="card">
+            <div class="card__head">
+                <div class="card__head-left">
+                    <div class="card__icon">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                    </div>
+                    <div>
+                        <div class="card__title">会社・担当者情報</div>
+                        <div class="card__desc">コピーテキスト・PDF見積書のフッターに反映されます。</div>
+                    </div>
+                </div>
+            </div>
+            <div class="card__body">
+                <div class="grid2">
+                    <div class="fg"><label class="fl">社名・ブランド名<span class="req">*</span></label><input type="text" class="fi" id="f-companyName" placeholder="株式会社〇〇"></div>
+                    <div class="fg"><label class="fl">担当者名<span class="opt">（任意）</span></label><input type="text" class="fi" id="f-personName" placeholder="山田 太郎"></div>
+                </div>
+                <div class="fg"><label class="fl">担当部署<span class="opt">（任意）</span></label><input type="text" class="fi" id="f-department" placeholder="営業部"></div>
+                <div class="fg"><label class="fl">郵便番号<span class="opt">（任意）</span></label><input type="text" class="fi" id="f-postalCode" placeholder="〒123-4567"></div>
+                <div class="fg"><label class="fl">住所<span class="opt">（任意）</span></label><input type="text" class="fi" id="f-address" placeholder="東京都渋谷区〇〇町1-2-3"></div>
+                <div class="grid2">
+                    <div class="fg"><label class="fl">電話番号<span class="opt">（任意）</span></label><input type="tel" class="fi" id="f-tel" placeholder="03-1234-5678"></div>
+                    <div class="fg"><label class="fl">FAX番号<span class="opt">（任意）</span></label><input type="tel" class="fi" id="f-fax" placeholder="03-1234-5679"></div>
+                </div>
+                <div class="grid2">
+                    <div class="fg"><label class="fl">メールアドレス<span class="opt">（任意）</span></label><input type="email" class="fi" id="f-email" placeholder="info@example.com"></div>
+                    <div class="fg"><label class="fl">WebサイトURL<span class="opt">（任意）</span></label><input type="url" class="fi" id="f-url" placeholder="https://example.com/"></div>
+                </div>
+                <div class="fg">
+                    <label class="fl">問い合わせページURL<span class="req">*</span></label>
+                    <input type="url" class="fi" id="f-contactUrl" placeholder="https://example.com/contact/">
+                    <p class="fh">「この内容で相談する」ボタンのリンク先です。</p>
+                </div>
+                <hr class="divider">
+                <div class="fg-label-row">
+                    <label class="fl">SNS リンク<span class="opt">（任意）</span></label>
+                    <button class="btn-add" id="btnAddSns">＋ 追加</button>
+                </div>
+                <div id="snsEditor"></div>
+            </div>
+        </div>
+
+        <!-- ツール設定 -->
+        <div class="card">
+            <div class="card__head">
+                <div class="card__head-left">
+                    <div class="card__icon">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </div>
+                    <div>
+                        <div class="card__title">ツール設定</div>
+                        <div class="card__desc">タイトル・PDF見積書の文言を変更できます。</div>
+                    </div>
+                </div>
+            </div>
+            <div class="card__body">
+                <div class="grid2">
+                    <div class="fg"><label class="fl">ツールタイトル</label><input type="text" class="fi" id="f-toolTitle" placeholder="見積もりシミュレーター"></div>
+                    <div class="fg"><label class="fl">ツールサブタイトル</label><input type="text" class="fi" id="f-toolSubtitle" placeholder="選択するだけで概算金額を即座に算出。"></div>
+                </div>
+                <div class="fg"><label class="fl">PDF見積書タイトル</label><input type="text" class="fi" id="f-pdfTitle" placeholder="概算お見積書"></div>
+                <div class="fg">
+                    <label class="fl">PDF注記</label>
+                    <textarea class="ft" id="f-pdfNote" rows="3" placeholder="・本お見積りはシミュレーターによる概算です…"></textarea>
+                    <p class="fh">PDF見積書の下部に表示される注意書きです。</p>
+                </div>
+                <div class="fg">
+                    <label class="fl">結果ページ 注意書き</label>
+                    <textarea class="ft" id="f-disclaimer" rows="2" placeholder="※ 本ツールの見積もりは概算です。実際の金額はヒアリング内容・要件定義により変動します。正式なお見積もりはお問い合わせください。"></textarea>
+                    <p class="fh">見積もり結果ページ下部に表示される注意書きです。</p>
+                </div>
+                <div class="fg">
+                    <label class="fl">ディレクション費</label>
+                    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                        <select class="fi" id="f-directionFeeType" style="width:auto; flex-shrink:0;">
+                            <option value="percent">%設定（制作費に対して）</option>
+                            <option value="fixed">固定金額（円）</option>
+                            <option value="none">設定しない</option>
+                        </select>
+                        <input type="number" class="fi" id="f-directionFeeValue" min="0" step="1" style="width:100px; flex-shrink:0;">
+                        <span id="direction-fee-unit" style="white-space:nowrap;">%</span>
+                    </div>
+                    <p class="fh">制作費小計に対する進行管理費用です。「設定しない」を選ぶとディレクション費は表示されません。</p>
+                </div>
+                <div class="fg">
+                    <label class="fl">消費税率</label>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <input type="number" class="fi" id="f-taxRate" min="0" max="100" step="0.1" style="width:100px;">
+                        <span style="white-space:nowrap;">%</span>
+                    </div>
+                    <p class="fh">0 を設定すると非課税（税額なし）になります。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- カラー設定 -->
+        <div class="card">
+            <div class="card__head">
+                <div class="card__head-left">
+                    <div class="card__icon">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/></svg>
+                    </div>
+                    <div>
+                        <div class="card__title">カラー設定</div>
+                        <div class="card__desc">ツール全体・PDF出力の配色を変更できます。</div>
+                    </div>
+                </div>
+                <button class="btn-color-reset" id="btnColorReset" title="デフォルトカラーに戻す">↺ デフォルトに戻す</button>
+            </div>
+            <div class="card__body">
+                <div class="color-grid" id="colorGrid"></div>
+            </div>
+        </div>
+
+    </div><!-- /tab-basic -->
+
+    <!-- ════════════════════════════════
+         タブ③ フリーStep
+    ════════════════════════════════ -->
+    <div class="tab-panel" id="tab-free">
+
+        <div class="card">
+            <div class="card__head">
+                <div class="card__head-left">
+                    <div class="card__icon">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    </div>
+                    <div>
+                        <div class="card__title" id="freeStepTabTitle">フリーStep</div>
+                        <div class="card__desc" id="freeStepTabDesc">チェックボックス型で複数選択・価格加算方式です。</div>
+                    </div>
+                </div>
+                <button class="btn-add" id="btnAddFreeStep">＋ Step追加</button>
+            </div>
+            <div class="card__body" id="freeStepEditor">
+                <div class="free-step-empty" id="freeStepEmpty">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    <p>フリーStepはまだありません。「＋ Step追加」で追加してください。</p>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /tab-free -->
+
+    <!-- ════════════════════════════════
+         タブ② 項目・金額（Web制作版のみ）
+    ════════════════════════════════ -->
+    <div class="tab-panel" id="tab-items">
+
+        <!-- 価格定数 -->
+        <div class="card">
+            <div class="card__head">
+                <div class="card__head-left">
+                    <div class="card__icon">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+                    <div>
+                        <div class="card__title">LP / 通常サイト 価格定数</div>
+                        <div class="card__desc">トップページ・追加セクションの基本価格です。</div>
+                    </div>
+                </div>
+            </div>
+            <div class="card__body">
+                <div class="price-const-grid">
+                    <div class="pc-item"><label>LPトップページ価格</label><div class="pc-wrap"><span class="yen">¥</span><input type="number" id="f-s2TopLp" min="0" step="1000"></div></div>
+                    <div class="pc-item"><label>通常トップページ価格</label><div class="pc-wrap"><span class="yen">¥</span><input type="number" id="f-s2TopStd" min="0" step="1000"></div></div>
+                    <div class="pc-item"><label>LP追加セクション単価</label><div class="pc-wrap"><span class="yen">¥</span><input type="number" id="f-lpSec" min="0" step="1000"></div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP1 -->
+        <div class="card">
+            <div class="card__head">
+                <div class="card__head-left">
+                    <div class="card__icon">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                    </div>
+                    <div>
+                        <div class="card__title">STEP1：サイトタイプ</div>
+                        <div class="card__desc">項目名とサブテキストを編集できます。</div>
+                    </div>
+                </div>
+                <button class="btn-add" id="btnAddS1">＋ 追加</button>
+            </div>
+            <div class="card__body" id="s1Editor"></div>
+        </div>
+
+        <!-- STEP2 -->
+        <div class="card">
+            <div class="card__head">
+                <div class="card__head-left">
+                    <div class="card__icon">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                    </div>
+                    <div>
+                        <div class="card__title">STEP2：ページ構成</div>
+                        <div class="card__desc">カテゴリごとに項目名・金額を編集できます。</div>
+                    </div>
+                </div>
+            </div>
+            <div class="card__body" id="s2Editor"></div>
+        </div>
+
+        <!-- STEP3 -->
+        <div class="card">
+            <div class="card__head">
+                <div class="card__head-left">
+                    <div class="card__icon">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                    </div>
+                    <div>
+                        <div class="card__title">STEP3：機能・演出</div>
+                        <div class="card__desc">項目名と価格を編集できます。</div>
+                    </div>
+                </div>
+                <button class="btn-add" id="btnAddS3">＋ 追加</button>
+            </div>
+            <div class="card__body" id="s3Editor"></div>
+        </div>
+
+        <!-- STEP4 -->
+        <div class="card">
+            <div class="card__head">
+                <div class="card__head-left">
+                    <div class="card__icon">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+                    </div>
+                    <div>
+                        <div class="card__title">STEP4：システム・設定</div>
+                        <div class="card__desc">項目名と価格を編集できます。</div>
+                    </div>
+                </div>
+            </div>
+            <div class="card__body" id="s4Editor"></div>
+        </div>
+
+    </div><!-- /tab-items -->
+
+    <!-- 保存エリア -->
+    <div class="save-area">
+        <div class="save-area__title" id="saveAreaTitle" role="button" tabindex="0">💾 設定を保存する<svg class="save-area__arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></div>
+        <div class="save-body">
+        <div class="save-area__desc">編集内容をJSONファイルとして保存します。次回は「ユーザー設定を読込」で同じ設定を即座に復元できます。</div>
+        <div class="save-btns">
+            <button class="btn-dl" id="btnDl">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                ユーザー設定を保存
+            </button>
+            <button class="btn-settings-load" id="btnSettingsLoad">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                ユーザー設定を読込
+            </button>
+            <input type="file" id="settingsLoadFile" accept=".json" style="display:none">
+            <button class="btn-proj-load" id="btnProjLoad">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                テンプレートを読込
+            </button>
+            <input type="file" id="projLoadFile" accept=".json" style="display:none">
+            <button class="btn-cp" id="btnCp">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                コードをコピー
+            </button>
+            <button class="btn-pv" id="btnPreview">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                ツールを確認
+            </button>
+            <button class="btn-admin-reset" id="btnAdminReset" title="管理画面の保存データ（ブラウザキャッシュ）を消去してsettings.jsの初期値に戻します">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                キャッシュをリセット
+            </button>
+        </div>
+        <div class="save-guide">
+            <div class="save-guide__title">📋 保存・読込の手順</div>
+            <ol>
+                <li>設定を変更後、「ユーザー設定を保存」をクリックしてJSONファイルをダウンロード</li>
+                <li>次回は「ユーザー設定を読込」でJSONを読み込めば設定が即座に復元されます</li>
+                <li>「テンプレートを読込」から <strong>templates/</strong> フォルダ内のJSONを選択すると種類を切り替えられます</li>
+                <li>「ツールを確認」から index.html を開いて動作確認</li>
+                <li>settings.jsを更新するには「コードをコピー」後、settings.jsを開いて貼り付けるか「コードをコピー」後に手動で保存</li>
+            </ol>
+        </div>
+        </div><!-- /save-body -->
+    </div>
+
+</div><!-- /wrap -->
+
+<div id="toast-container"></div>
+
+<script src="./core.js"></script>
+<script src="./settings.js"></script>
+<script>
+'use strict';
+
+/* ═══════════════════════════════════════════════════════════
+   DEFAULT_SETTINGS
+═══════════════════════════════════════════════════════════ */
+{
+    const DEFAULT_SETTINGS = {
+        companyName:        '',
+        personName:         '',
+        email:              '',
+        url:                '',
+        department:         '',
+        postalCode:         '',
+        address:            '',
+        tel:                '',
+        fax:                '',
+        contactUrl:         '',
+        sns:                [],
+        logoBase64:         '',
+        pdfTitle:           '概算お見積書',
+        pdfNote:            '',
+        disclaimer:         '※ 本ツールの見積もりは概算です。実際の金額はヒアリング内容・要件定義により変動します。正式なお見積もりはお問い合わせください。',
+        toolTitle:          '見積もりシミュレーター',
+        toolSubtitle:       '選択するだけで概算金額を即座に算出。',
+        storageKey:         'estimate_v1',
+        templateType:       'flex',
+        templateName:       '',
+        directionFeeType:   'percent',
+        directionFeeValue:  10,
+        taxRate:            10,
+        colorPrimary:       '#6366f1',
+        colorSecondary:     '#8b5cf6',
+        colorBg:            '#f8f8fc',
+        colorAccentBg:      '#eef2ff',
+        colorAccentBorder:  '#a5b4fc',
+        colorWarningBg:     '#fffbeb',
+        colorWarningText:   '#92400e',
+        colorWarningBorder: '#fcd34d',
+        colorPanelHeadBg:   '#6366f1',
+        colorPanelHeadText: '#ffffff',
+        colorCardSubText:   '#6b7280',
+    };
+    Object.keys(DEFAULT_SETTINGS).forEach(key => {
+        if (SETTINGS[key] === undefined) SETTINGS[key] = DEFAULT_SETTINGS[key];
+    });
+}
+if (typeof S2_TOP_PRICE_LP   === 'undefined') window.S2_TOP_PRICE_LP   = 70000;
+if (typeof S2_TOP_PRICE_STD  === 'undefined') window.S2_TOP_PRICE_STD  = 65000;
+if (typeof LP_SECTION_PRICE  === 'undefined') window.LP_SECTION_PRICE  = 15000;
+if (typeof STEP1_ITEMS       === 'undefined') window.STEP1_ITEMS       = [];
+if (typeof STEP2_CATS        === 'undefined') window.STEP2_CATS        = [];
+if (typeof STEP3_ITEMS       === 'undefined') window.STEP3_ITEMS       = [];
+if (typeof STEP4_VAR         === 'undefined') window.STEP4_VAR         = [];
+if (typeof STEP4_FIX         === 'undefined') window.STEP4_FIX         = [];
+if (typeof FREE_STEPS        === 'undefined') window.FREE_STEPS        = [];
+
+/* ═══════════════════════════════════════════════════════════
+   状態
+═══════════════════════════════════════════════════════════ */
+function normalizeSns(s) {
+    if (Array.isArray(s.sns)) return deepCopy(s.sns);
+    const arr = [];
+    if (s.sns1Label) arr.push({ label: s.sns1Label, url: s.sns1Url || '' });
+    if (s.sns2Label) arr.push({ label: s.sns2Label, url: s.sns2Url || '' });
+    return arr.length > 0 ? arr : [{ label: 'Twitter', url: '' }, { label: 'Instagram', url: '' }];
+}
+
+const COLOR_DEFAULTS = {
+    colorPrimary:       '#3EB2D2',
+    colorSecondary:     '#255797',
+    colorBg:            '#dddddd',
+    colorAccentBg:      '#eef7fc',
+    colorAccentBorder:  '#bae6fd',
+    colorWarningBg:     '#fffbeb',
+    colorWarningText:   '#b45309',
+    colorWarningBorder: '#fde68a',
+    colorPanelHeadBg:   '#f8fafc',
+    colorPanelHeadText: '#475569',
+    colorCardSubText:   '#94a3b8',
+};
+
+let cfg = {
+    settings:   Object.assign({}, SETTINGS),
+    s2TopLp:    S2_TOP_PRICE_LP,
+    s2TopStd:   S2_TOP_PRICE_STD,
+    lpSecPrice: LP_SECTION_PRICE,
+    step1:      deepCopy(STEP1_ITEMS),
+    step2:      deepCopy(STEP2_CATS),
+    step3:      deepCopy(STEP3_ITEMS),
+    step4var:   deepCopy(STEP4_VAR),
+    step4fix:   deepCopy(STEP4_FIX),
+    freeSteps:  deepCopy(FREE_STEPS || []),
+    sns:        normalizeSns(SETTINGS),
+    logoBase64: SETTINGS.logoBase64 || '',
+};
+
+/* ═══════════════════════════════════════════════════════════
+   タブ
+═══════════════════════════════════════════════════════════ */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('on'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('on'));
+        btn.classList.add('on');
+        document.getElementById(btn.dataset.tab).classList.add('on');
+    });
+});
+
+/* ═══════════════════════════════════════════════════════════
+   テンプレートタイプ UI 切替
+   （flex モードは ② 項目・金額 タブを非表示）
+═══════════════════════════════════════════════════════════ */
+function updateTemplateTypeUI() {
+    const isWeb = cfg.settings.templateType === 'web';
+    const tabItemsBtn = document.getElementById('tabItemsBtn');
+    if (tabItemsBtn) {
+        tabItemsBtn.style.display = isWeb ? '' : 'none';
+        // flex モードで ② タブがアクティブなら ① に戻す
+        if (!isWeb && tabItemsBtn.classList.contains('on')) {
+            tabItemsBtn.classList.remove('on');
+            document.getElementById('tab-items').classList.remove('on');
+            document.querySelector('[data-tab="tab-basic"]').classList.add('on');
+            document.getElementById('tab-basic').classList.add('on');
+        }
+    }
+
+    // フリーStep タブの説明テキスト更新
+    const freeTitle = document.getElementById('freeStepTabTitle');
+    const freeDesc  = document.getElementById('freeStepTabDesc');
+    if (freeTitle) freeTitle.textContent = isWeb
+        ? 'フリーStep（Step 5以降）'
+        : 'フリーStep（Step 1以降）';
+    if (freeDesc) freeDesc.textContent = isWeb
+        ? 'Step1〜4の固定ステップに続けて、自由なオプションステップを追加できます。チェックボックス型で複数選択・価格加算方式です。'
+        : '自由なオプションステップを追加できます。チェックボックス型で複数選択・価格加算方式です。';
+
+    // フリーStepエディターの番号も再描画
+    buildFreeStepEditor();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   テンプレート適用
+═══════════════════════════════════════════════════════════ */
+function updateTemplateBadge() {
+    const badge = document.getElementById('tplBadge');
+    const name  = document.getElementById('tplBadgeName');
+    const n = cfg.settings.templateName || '';
+    if (!badge || !name) return;
+    if (n) {
+        name.textContent = n;
+        badge.style.display = '';
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
+function applyTemplate(tmpl) {
+    cfg.settings.templateType = tmpl.type || 'flex';
+    cfg.settings.templateName = tmpl.name || '';
+    cfg.freeSteps = deepCopy(tmpl.freeSteps || []);
+
+    if (tmpl.type === 'web') {
+        if (tmpl.s2TopLp    !== undefined) cfg.s2TopLp    = tmpl.s2TopLp;
+        if (tmpl.s2TopStd   !== undefined) cfg.s2TopStd   = tmpl.s2TopStd;
+        if (tmpl.lpSecPrice !== undefined) cfg.lpSecPrice = tmpl.lpSecPrice;
+        if (Array.isArray(tmpl.step1))    cfg.step1    = deepCopy(tmpl.step1);
+        if (Array.isArray(tmpl.step2))    cfg.step2    = deepCopy(tmpl.step2);
+        if (Array.isArray(tmpl.step3))    cfg.step3    = deepCopy(tmpl.step3);
+        if (Array.isArray(tmpl.step4var)) cfg.step4var = deepCopy(tmpl.step4var);
+        if (Array.isArray(tmpl.step4fix)) cfg.step4fix = deepCopy(tmpl.step4fix);
+    }
+    updateTemplateBadge();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   カラー設定パネル
+═══════════════════════════════════════════════════════════ */
+const COLOR_DEFS = [
+    { key: 'colorPrimary',       label: 'メインカラー',             hint: 'ボタン・バッジ・グラデーション開始色' },
+    { key: 'colorSecondary',     label: 'サブカラー',               hint: 'グラデーション終了色・強調テキスト' },
+    { key: 'colorBg',            label: 'ページ背景色',             hint: 'ツール全体の背景' },
+    { key: 'colorAccentBg',      label: '選択済み背景色',           hint: '選択したカードの背景' },
+    { key: 'colorAccentBorder',  label: '選択済みボーダー色',       hint: '選択したカードの枠線' },
+    { key: 'colorWarningBg',     label: '注意書き背景色',           hint: '「1ページ固定」「注意書き」の背景' },
+    { key: 'colorWarningText',   label: '注意書きテキスト色',       hint: '注意書きの文字色' },
+    { key: 'colorWarningBorder', label: '注意書きボーダー色',       hint: '注意書きの枠線色' },
+    { key: 'colorPanelHeadBg',   label: '見出しエリア背景色',       hint: '「Step●」見出し部分の背景' },
+    { key: 'colorPanelHeadText', label: '見出しエリアテキスト色',   hint: '「Step●」ステップ名の文字色' },
+    { key: 'colorCardSubText',   label: '選択肢補足テキスト色',     hint: '選択肢カード内の補足説明の文字色' },
+];
+
+const ADMIN_COLOR_MAP = {
+    colorPrimary:       '--primary',
+    colorSecondary:     '--secondary',
+    colorBg:            '--bg',
+    colorAccentBg:      '--accent-bg',
+    colorAccentBorder:  '--accent-border',
+    colorWarningBg:     '--amber50',
+    colorWarningText:   '--amber700',
+    colorWarningBorder: '--amber200',
+    colorPanelHeadBg:   '--panel-head-bg',
+    colorPanelHeadText: '--panel-head-text',
+    colorCardSubText:   '--card-sub-text',
+};
+
+function hexToRgbStr(hex) {
+    const h = hex.replace('#', '');
+    if (h.length !== 6) return null;
+    const r = parseInt(h.slice(0,2), 16);
+    const g = parseInt(h.slice(2,4), 16);
+    const b = parseInt(h.slice(4,6), 16);
+    if (isNaN(r) || isNaN(g) || isNaN(b)) return null;
+    return `${r}, ${g}, ${b}`;
+}
+
+function applyAdminColor(key, val) {
+    const cssVar = ADMIN_COLOR_MAP[key];
+    if (!cssVar) return;
+    document.documentElement.style.setProperty(cssVar, val);
+    if (key === 'colorPrimary') {
+        const rgb = hexToRgbStr(val);
+        if (rgb) document.documentElement.style.setProperty('--primary-rgb', rgb);
+    }
+    if (key === 'colorSecondary') {
+        const rgb = hexToRgbStr(val);
+        if (rgb) document.documentElement.style.setProperty('--secondary-rgb', rgb);
+    }
+}
+
+function buildColorGrid() {
+    const grid = document.getElementById('colorGrid');
+    grid.innerHTML = '';
+    COLOR_DEFS.forEach(def => {
+        const val = cfg.settings[def.key] || '#000000';
+        const item = document.createElement('div');
+        item.className = 'color-item';
+
+        const lbl = document.createElement('label');
+        lbl.textContent = def.label;
+
+        const row = document.createElement('div');
+        row.className = 'color-row';
+
+        const picker = document.createElement('input');
+        picker.type = 'color';
+        picker.value = val;
+
+        const textIn = document.createElement('input');
+        textIn.type = 'text';
+        textIn.value = val;
+        textIn.maxLength = 7;
+        textIn.placeholder = '#000000';
+
+        const preview = document.createElement('div');
+        preview.className = 'color-preview';
+        preview.style.background = val;
+
+        const sync = (v) => {
+            cfg.settings[def.key] = v;
+            picker.value  = v;
+            textIn.value  = v;
+            preview.style.background = v;
+            applyAdminColor(def.key, v);
+        };
+
+        picker.addEventListener('input',  () => { sync(picker.value); saveAdminState(); });
+        textIn.addEventListener('input',  () => {
+            const v = textIn.value.trim();
+            if (/^#[0-9a-fA-F]{6}$/.test(v)) { sync(v); saveAdminState(); }
+            else {
+                preview.style.background = v;
+                cfg.settings[def.key] = v;
+                applyAdminColor(def.key, v);
+                saveAdminState();
+            }
+        });
+
+        const hint = document.createElement('div');
+        hint.className = 'fh';
+        hint.textContent = def.hint;
+
+        row.append(picker, textIn, preview);
+        item.append(lbl, row, hint);
+        grid.appendChild(item);
+    });
+}
+
+document.getElementById('btnColorReset').addEventListener('click', () => {
+    Object.assign(cfg.settings, COLOR_DEFAULTS);
+    buildColorGrid();
+    Object.entries(ADMIN_COLOR_MAP).forEach(([key]) => {
+        applyAdminColor(key, COLOR_DEFAULTS[key]);
+    });
+    saveAdminState();
+    toast('カラーをデフォルトに戻しました。', 'info');
+});
+
+/* ═══════════════════════════════════════════════════════════
+   管理画面 localStorage 永続化
+═══════════════════════════════════════════════════════════ */
+const ADMIN_STORAGE_KEY = (SETTINGS.storageKey || 'estimate_v1') + '_adminCfg';
+
+function saveAdminState() {
+    try {
+        const data = {
+            settings:   Object.assign({}, cfg.settings),
+            s2TopLp:    cfg.s2TopLp,
+            s2TopStd:   cfg.s2TopStd,
+            lpSecPrice: cfg.lpSecPrice,
+            step1:      cfg.step1,
+            step2:      cfg.step2,
+            step3:      cfg.step3,
+            step4var:   cfg.step4var,
+            step4fix:   cfg.step4fix,
+            freeSteps:  cfg.freeSteps,
+            sns:        cfg.sns,
+            logoBase64: cfg.logoBase64,
+        };
+        localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(data));
+    } catch(_) {}
+}
+
+function loadAdminState() {
+    try {
+        const raw = localStorage.getItem(ADMIN_STORAGE_KEY);
+        if (!raw) return;
+        const saved = JSON.parse(raw);
+        if (saved.settings)                 Object.assign(cfg.settings, saved.settings);
+        if (saved.s2TopLp    !== undefined) cfg.s2TopLp    = saved.s2TopLp;
+        if (saved.s2TopStd   !== undefined) cfg.s2TopStd   = saved.s2TopStd;
+        if (saved.lpSecPrice !== undefined) cfg.lpSecPrice = saved.lpSecPrice;
+        if (Array.isArray(saved.step1))     cfg.step1      = saved.step1;
+        if (Array.isArray(saved.step2))     cfg.step2      = saved.step2;
+        if (Array.isArray(saved.step3))     cfg.step3      = saved.step3;
+        if (Array.isArray(saved.step4var))  cfg.step4var   = saved.step4var;
+        if (Array.isArray(saved.step4fix))  cfg.step4fix   = saved.step4fix;
+        if (Array.isArray(saved.freeSteps)) cfg.freeSteps  = saved.freeSteps;
+        if (Array.isArray(saved.sns))       cfg.sns        = saved.sns;
+        if (saved.logoBase64) {
+            cfg.logoBase64          = saved.logoBase64;
+            cfg.settings.logoBase64 = saved.logoBase64;
+        }
+    } catch(_) {}
+}
+
+function updateDirectionFeeUI() {
+    const type = document.getElementById('f-directionFeeType').value;
+    const valueInput = document.getElementById('f-directionFeeValue');
+    const unitLabel  = document.getElementById('direction-fee-unit');
+    valueInput.disabled = (type === 'none');
+    valueInput.style.opacity = (type === 'none') ? '0.4' : '1';
+    if (unitLabel) unitLabel.textContent = (type === 'percent') ? '%' : '円';
+}
+
+/* ═══════════════════════════════════════════════════════════
+   フォーム初期値ロード
+═══════════════════════════════════════════════════════════ */
+function loadForms() {
+    const s = cfg.settings;
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+    set('f-companyName',  s.companyName);
+    set('f-personName',   s.personName);
+    set('f-email',        s.email);
+    set('f-url',          s.url);
+    set('f-department',   s.department);
+    set('f-postalCode',   s.postalCode);
+    set('f-address',      s.address);
+    set('f-tel',          s.tel);
+    set('f-fax',          s.fax);
+    set('f-contactUrl',   s.contactUrl);
+    set('f-toolTitle',    s.toolTitle);
+    set('f-toolSubtitle', s.toolSubtitle);
+    set('f-pdfTitle',     s.pdfTitle);
+    set('f-pdfNote',      s.pdfNote);
+    set('f-disclaimer',   s.disclaimer);
+    document.getElementById('f-directionFeeType').value  = s.directionFeeType  || 'percent';
+    document.getElementById('f-directionFeeValue').value = (s.directionFeeValue ?? 10);
+    document.getElementById('f-taxRate').value           = (s.taxRate ?? 10);
+    updateDirectionFeeUI();
+    const s2TopLpEl = document.getElementById('f-s2TopLp');
+    if (s2TopLpEl)  s2TopLpEl.value  = cfg.s2TopLp;
+    const s2TopStdEl = document.getElementById('f-s2TopStd');
+    if (s2TopStdEl) s2TopStdEl.value = cfg.s2TopStd;
+    const lpSecEl = document.getElementById('f-lpSec');
+    if (lpSecEl)    lpSecEl.value    = cfg.lpSecPrice;
+    if (cfg.logoBase64) showLogoPrev(cfg.logoBase64, '保存済みロゴ', '');
+    buildSnsEditor();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   フォームから収集
+═══════════════════════════════════════════════════════════ */
+function collectForms() {
+    const g = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+    const s = cfg.settings;
+    s.companyName  = g('f-companyName');
+    s.personName   = g('f-personName');
+    s.email        = g('f-email');
+    s.url          = g('f-url');
+    s.department   = g('f-department');
+    s.postalCode   = g('f-postalCode');
+    s.address      = g('f-address');
+    s.tel          = g('f-tel');
+    s.fax          = g('f-fax');
+    s.contactUrl   = g('f-contactUrl');
+    s.toolTitle    = g('f-toolTitle');
+    s.toolSubtitle = g('f-toolSubtitle');
+    s.pdfTitle     = g('f-pdfTitle');
+    const pdfNoteEl = document.getElementById('f-pdfNote');
+    s.pdfNote = pdfNoteEl ? pdfNoteEl.value : '';
+    const disclaimerEl = document.getElementById('f-disclaimer');
+    s.disclaimer        = disclaimerEl ? disclaimerEl.value : '';
+    s.directionFeeType  = document.getElementById('f-directionFeeType').value;
+    const _dv = parseFloat(document.getElementById('f-directionFeeValue').value);
+    s.directionFeeValue = isNaN(_dv) ? 0 : _dv;
+    const _tr = parseFloat(document.getElementById('f-taxRate').value);
+    s.taxRate           = isNaN(_tr) ? 10 : _tr;
+    s.logoBase64        = cfg.logoBase64;
+
+    const s2TopLpEl = document.getElementById('f-s2TopLp');
+    if (s2TopLpEl)  cfg.s2TopLp    = parseInt(s2TopLpEl.value)  || 0;
+    const s2TopStdEl = document.getElementById('f-s2TopStd');
+    if (s2TopStdEl) cfg.s2TopStd   = parseInt(s2TopStdEl.value) || 0;
+    const lpSecEl = document.getElementById('f-lpSec');
+    if (lpSecEl)    cfg.lpSecPrice = parseInt(lpSecEl.value)    || 0;
+
+    saveAdminState();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ロゴ
+═══════════════════════════════════════════════════════════ */
+function showLogoPrev(base64, name, sizeStr) {
+    document.getElementById('logoZone').classList.add('hidden');
+    document.getElementById('logoPrev').classList.remove('hidden');
+    document.getElementById('logoPrevImg').src = base64;
+    document.getElementById('logoName').textContent = name;
+    document.getElementById('logoSize').textContent = sizeStr;
+}
+function resetLogoPrev() {
+    document.getElementById('logoZone').classList.remove('hidden');
+    document.getElementById('logoPrev').classList.add('hidden');
+    document.getElementById('logoPrevImg').src = '';
+    cfg.logoBase64 = '';
+}
+
+document.getElementById('logoFile').addEventListener('change', function () {
+    const file = this.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) { toast('2MB以内の画像を選択してください。', 'error'); return; }
+    const reader = new FileReader();
+    reader.onload = e => {
+        cfg.logoBase64 = e.target.result;
+        showLogoPrev(cfg.logoBase64, file.name, (file.size / 1024).toFixed(1) + ' KB');
+        saveAdminState();
+        toast('✅ ロゴをアップロードしました！保存するとJSONに含まれます。');
+    };
+    reader.readAsDataURL(file);
+});
+
+const logoZone = document.getElementById('logoZone');
+logoZone.addEventListener('dragover',  e => { e.preventDefault(); logoZone.classList.add('drag'); });
+logoZone.addEventListener('dragleave', ()  => logoZone.classList.remove('drag'));
+logoZone.addEventListener('drop', e => {
+    e.preventDefault(); logoZone.classList.remove('drag');
+    const file = e.dataTransfer.files[0];
+    if (!file || !file.type.startsWith('image/')) { toast('画像ファイルをドロップしてください。', 'error'); return; }
+    const reader = new FileReader();
+    reader.onload = ev => {
+        cfg.logoBase64 = ev.target.result;
+        showLogoPrev(cfg.logoBase64, file.name, (file.size / 1024).toFixed(1) + ' KB');
+        saveAdminState();
+        toast('✅ ロゴをアップロードしました！保存するとJSONに含まれます。');
+    };
+    reader.readAsDataURL(file);
+});
+document.getElementById('btnRmLogo').addEventListener('click', () => { resetLogoPrev(); saveAdminState(); toast('ロゴを削除しました。', 'info'); });
+
+/* ═══════════════════════════════════════════════════════════
+   SNS エディター
+═══════════════════════════════════════════════════════════ */
+function buildSnsEditor() {
+    const c = document.getElementById('snsEditor');
+    c.innerHTML = '';
+    cfg.sns.forEach((sn, idx) => {
+        const row = document.createElement('div');
+        row.className = 'sns-row';
+
+        const labelIn = document.createElement('input');
+        labelIn.type = 'text'; labelIn.className = 'fi';
+        labelIn.placeholder = 'Twitter / X'; labelIn.value = sn.label || '';
+        labelIn.addEventListener('input', () => { cfg.sns[idx].label = labelIn.value; saveAdminState(); });
+
+        const urlIn = document.createElement('input');
+        urlIn.type = 'url'; urlIn.className = 'fi';
+        urlIn.placeholder = 'https://'; urlIn.value = sn.url || '';
+        urlIn.addEventListener('input', () => { cfg.sns[idx].url = urlIn.value; saveAdminState(); });
+
+        const del = mkDelBtn(() => { cfg.sns.splice(idx, 1); buildSnsEditor(); }, cfg.sns.length <= 1);
+        row.append(labelIn, urlIn, del);
+        c.appendChild(row);
+    });
+}
+document.getElementById('btnAddSns').addEventListener('click', () => {
+    cfg.sns.push({ label: '', url: '' });
+    buildSnsEditor();
+});
+
+/* ═══════════════════════════════════════════════════════════
+   共通：項目行ビルダー
+═══════════════════════════════════════════════════════════ */
+function mkInput(val, ph, onInput) {
+    const el = document.createElement('input');
+    el.type = 'text'; el.className = 'ir-label';
+    el.value = val || ''; el.placeholder = ph;
+    el.addEventListener('input', () => { onInput(); saveAdminState(); });
+    return el;
+}
+function mkPriceInput(val, onInput, disabled = false) {
+    const wrap = document.createElement('div');
+    wrap.className = 'ir-price-wrap';
+    const yen = document.createElement('span'); yen.className = 'yen'; yen.textContent = '¥';
+    const inp = document.createElement('input');
+    inp.type = 'number'; inp.className = 'ir-price';
+    inp.value = val || 0; inp.min = 0; inp.step = 1000;
+    inp.disabled = disabled;
+    inp.addEventListener('input', () => { onInput(); saveAdminState(); });
+    wrap.append(yen, inp);
+    return { wrap, inp };
+}
+function mkDelBtn(onClick, disabled = false) {
+    const btn = document.createElement('button');
+    btn.className = 'btn-del'; btn.title = '削除'; btn.disabled = disabled;
+    btn.innerHTML = `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>`;
+    if (!disabled) btn.addEventListener('click', onClick);
+    return btn;
+}
+function makeDraggable(row, idx, arr, rebuild) {
+    const handle = document.createElement('div');
+    handle.className = 'drag-handle';
+    handle.title = 'ドラッグして並び替え';
+    handle.innerHTML = `<svg fill="currentColor" viewBox="0 0 20 20"><path d="M7 4a1 1 0 100 2 1 1 0 000-2zM13 4a1 1 0 100 2 1 1 0 000-2zM7 9a1 1 0 100 2 1 1 0 000-2zM13 9a1 1 0 100 2 1 1 0 000-2zM7 14a1 1 0 100 2 1 1 0 000-2zM13 14a1 1 0 100 2 1 1 0 000-2z"/></svg>`;
+    handle.addEventListener('mousedown', () => { row.draggable = true; });
+    document.addEventListener('mouseup', () => { row.draggable = false; });
+    row.prepend(handle);
+    row.addEventListener('dragstart', e => {
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', String(idx));
+        setTimeout(() => row.classList.add('dragging'), 0);
+    });
+    row.addEventListener('dragend', () => { row.classList.remove('dragging'); row.draggable = false; });
+    row.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; row.classList.add('drag-over'); });
+    row.addEventListener('dragleave', () => row.classList.remove('drag-over'));
+    row.addEventListener('drop', e => {
+        e.preventDefault();
+        row.classList.remove('drag-over');
+        const fromIdx = parseInt(e.dataTransfer.getData('text/plain'));
+        if (fromIdx === idx) return;
+        arr.splice(idx, 0, arr.splice(fromIdx, 1)[0]);
+        rebuild();
+    });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   STEP1 エディター
+═══════════════════════════════════════════════════════════ */
+function buildS1() {
+    const c = document.getElementById('s1Editor');
+    c.innerHTML = '';
+    cfg.step1.forEach((it, idx) => {
+        const row = document.createElement('div');
+        row.className = 's1-row';
+        const nameIn = mkInput(it.label, 'サイトタイプ名', () => { cfg.step1[idx].label = nameIn.value; });
+        const subIn  = mkInput(it.sub, 'サブテキスト（任意）', () => { cfg.step1[idx].sub = subIn.value; });
+        const del = mkDelBtn(() => { cfg.step1.splice(idx, 1); buildS1(); }, cfg.step1.length <= 1);
+        row.append(nameIn, subIn, del);
+        makeDraggable(row, idx, cfg.step1, buildS1);
+        c.appendChild(row);
+    });
+}
+document.getElementById('btnAddS1').addEventListener('click', () => {
+    cfg.step1.push({ id: `s1_c${Date.now()}`, label: '', sub: '', isLP: false });
+    buildS1();
+});
+
+/* ═══════════════════════════════════════════════════════════
+   STEP2 エディター
+═══════════════════════════════════════════════════════════ */
+function buildS2() {
+    const c = document.getElementById('s2Editor');
+    c.innerHTML = '';
+    cfg.step2.forEach((cat, ci) => {
+        const sec = document.createElement('div');
+        sec.className = 'cat-section';
+
+        const head = document.createElement('div');
+        head.className = 'cat-head';
+        const nm = document.createElement('span'); nm.className = 'cat-name'; nm.textContent = cat.label;
+        const hasRequired = cat.items.some(it => it.required);
+        head.append(nm);
+        if (!hasRequired) {
+            const addBtn = document.createElement('button'); addBtn.className = 'btn-add'; addBtn.textContent = '＋ 追加';
+            addBtn.addEventListener('click', () => {
+                cat.items.push({ id: `s2_c${Date.now()}`, label: '', price: 0, pages: 1, sub: '' });
+                buildS2();
+            });
+            head.append(addBtn);
+        }
+        sec.appendChild(head);
+
+        cat.items.forEach((it, ii) => {
+            const row = document.createElement('div');
+            row.className = 'item-row' + (it.required ? ' req' : '');
+            const nameIn = mkInput(it.label, 'ページ名', () => { cat.items[ii].label = nameIn.value; });
+            nameIn.disabled = !!it.required;
+            const right = document.createElement('div');
+            right.style.cssText = 'display:flex;align-items:center;gap:4px;';
+            if (it.required) {
+                const placeholder = document.createElement('div');
+                const priceInfo = document.createElement('span');
+                priceInfo.className = 'req-price-info';
+                priceInfo.dataset.topPriceInfo = 'true';
+                priceInfo.textContent = `LP ¥${cfg.s2TopLp.toLocaleString('ja-JP')} / 通常 ¥${cfg.s2TopStd.toLocaleString('ja-JP')}`;
+                const b = document.createElement('span'); b.className = 'req-badge'; b.textContent = '必須';
+                right.append(b);
+                row.prepend(placeholder);
+                row.append(nameIn, priceInfo, right);
+            } else {
+                const subIn = mkInput(it.sub, 'サブテキスト（任意）', () => { cat.items[ii].sub = subIn.value; });
+                const { wrap: pw } = mkPriceInput(it.price, () => { cat.items[ii].price = parseInt(pw.querySelector('input').value) || 0; });
+                right.appendChild(mkDelBtn(() => { cat.items.splice(ii, 1); buildS2(); }));
+                row.append(nameIn, subIn, pw, right);
+                makeDraggable(row, ii, cat.items, buildS2);
+            }
+            sec.appendChild(row);
+        });
+
+        if (ci < cfg.step2.length - 1) {
+            const hr = document.createElement('hr'); hr.className = 'divider'; sec.appendChild(hr);
+        }
+        c.appendChild(sec);
+    });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   STEP3 エディター
+═══════════════════════════════════════════════════════════ */
+function buildS3() {
+    const c = document.getElementById('s3Editor');
+    c.innerHTML = '';
+    cfg.step3.forEach((it, idx) => {
+        const row = document.createElement('div');
+        row.className = 'item-row';
+        const nameIn = mkInput(it.label, '機能・演出名', () => { cfg.step3[idx].label = nameIn.value; });
+        const subIn  = mkInput(it.sub, 'サブテキスト（任意）', () => { cfg.step3[idx].sub = subIn.value; });
+        const { wrap: pw } = mkPriceInput(it.price, () => { cfg.step3[idx].price = parseInt(pw.querySelector('input').value) || 0; });
+        row.append(nameIn, subIn, pw, mkDelBtn(() => { cfg.step3.splice(idx, 1); buildS3(); }));
+        makeDraggable(row, idx, cfg.step3, buildS3);
+        c.appendChild(row);
+    });
+}
+document.getElementById('btnAddS3').addEventListener('click', () => {
+    cfg.step3.push({ id: `s3_c${Date.now()}`, label: '', price: 0, sub: '' });
+    buildS3();
+});
+
+/* ═══════════════════════════════════════════════════════════
+   STEP4 エディター
+═══════════════════════════════════════════════════════════ */
+function buildS4() {
+    const c = document.getElementById('s4Editor');
+    c.innerHTML = '';
+
+    const varHead = document.createElement('div');
+    varHead.className = 'cat-head';
+    const varNm = document.createElement('div');
+    varNm.innerHTML = `
+        <div class="cat-name">ページ単価系</div>
+        <div class="cat-desc">選択ページ数 × 単価 で自動計算されます（LP時は固定計算）。</div>`;
+    const varAdd = document.createElement('button');
+    varAdd.className = 'btn-add'; varAdd.textContent = '＋ 追加（ページ単価系）';
+    varAdd.addEventListener('click', () => {
+        cfg.step4var.push({ id: `s4v_c${Date.now()}`, label: '', unitPrice: 0, sub: '' });
+        buildS4();
+    });
+    varHead.append(varNm, varAdd);
+    c.appendChild(varHead);
+
+    cfg.step4var.forEach((it, idx) => {
+        const row = document.createElement('div');
+        row.className = 'item-row s4-var-row';
+        const nameIn = mkInput(it.label, '項目名', () => { cfg.step4var[idx].label = nameIn.value; });
+        const subIn  = mkInput(it.sub, 'サブテキスト（任意）', () => { cfg.step4var[idx].sub = subIn.value; });
+        const unitWrap = document.createElement('div');
+        unitWrap.className = 'ir-price-unit-wrap';
+        const { wrap: pw, inp: priceInp } = mkPriceInput(it.unitPrice, () => {
+            cfg.step4var[idx].unitPrice = parseInt(priceInp.value) || 0;
+        });
+        pw.querySelector('input').step = 500;
+        const unitLbl = document.createElement('span');
+        unitLbl.className = 'ir-unit-label'; unitLbl.textContent = '/ ページ';
+        unitWrap.append(pw, unitLbl);
+        row.append(nameIn, subIn, unitWrap, mkDelBtn(() => { cfg.step4var.splice(idx, 1); buildS4(); }));
+        makeDraggable(row, idx, cfg.step4var, buildS4);
+        c.appendChild(row);
+    });
+
+    const hr = document.createElement('hr'); hr.className = 'divider'; c.appendChild(hr);
+
+    const fixHead = document.createElement('div');
+    fixHead.className = 'cat-head';
+    const fixNm = document.createElement('div');
+    fixNm.innerHTML = `<div class="cat-name">固定費用</div>`;
+    const fixAdd = document.createElement('button');
+    fixAdd.className = 'btn-add'; fixAdd.textContent = '＋ 追加（固定費用）';
+    fixAdd.addEventListener('click', () => {
+        cfg.step4fix.push({ id: `s4f_c${Date.now()}`, label: '', price: 0, sub: '' });
+        buildS4();
+    });
+    fixHead.append(fixNm, fixAdd);
+    c.appendChild(fixHead);
+
+    cfg.step4fix.forEach((it, idx) => {
+        const row = document.createElement('div');
+        row.className = 'item-row';
+        const nameIn = mkInput(it.label, '項目名', () => { cfg.step4fix[idx].label = nameIn.value; });
+        const subIn  = mkInput(it.sub, 'サブテキスト（任意）', () => { cfg.step4fix[idx].sub = subIn.value; });
+        const { wrap: pw, inp: priceInp } = mkPriceInput(it.price, () => {
+            cfg.step4fix[idx].price = parseInt(priceInp.value) || 0;
+        });
+        row.append(nameIn, subIn, pw, mkDelBtn(() => { cfg.step4fix.splice(idx, 1); buildS4(); }));
+        makeDraggable(row, idx, cfg.step4fix, buildS4);
+        c.appendChild(row);
+    });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ユーザー設定 JSON ビルド
+═══════════════════════════════════════════════════════════ */
+function buildUserSettingsJson() {
+    collectForms();
+    const s = cfg.settings;
+
+    const settingsObj = Object.assign({}, s, {
+        sns:        deepCopy(cfg.sns),
+        logoBase64: cfg.logoBase64,
+    });
+
+    const template = {
+        type:      s.templateType || 'flex',
+        name:      s.templateName || '',
+        freeSteps: deepCopy(cfg.freeSteps),
+    };
+
+    if (template.type === 'web') {
+        template.s2TopLp    = cfg.s2TopLp;
+        template.s2TopStd   = cfg.s2TopStd;
+        template.lpSecPrice = cfg.lpSecPrice;
+        template.step1      = deepCopy(cfg.step1);
+        template.step2      = deepCopy(cfg.step2);
+        template.step3      = deepCopy(cfg.step3);
+        template.step4var   = deepCopy(cfg.step4var);
+        template.step4fix   = deepCopy(cfg.step4fix);
+    }
+
+    return {
+        version:    '1.0',
+        exportedAt: new Date().toISOString(),
+        settings:   settingsObj,
+        template,
+    };
+}
+
+/* ═══════════════════════════════════════════════════════════
+   settings.js コード生成
+═══════════════════════════════════════════════════════════ */
+function generateCode() {
+    collectForms();
+    const s = cfg.settings;
+    const q = v => JSON.stringify(v || '');
+    const pdfNoteEsc    = (s.pdfNote    || '').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n');
+    const disclaimerEsc = (s.disclaimer || '').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n');
+
+    const logoStr = s.logoBase64
+        ? `    logoBase64: '${s.logoBase64}',`
+        : `    logoBase64: '',`;
+
+    const s1Code = cfg.step1.map(it => {
+        const id = it.id.replace(/'/g,"\\'"), lb = (it.label||'').replace(/'/g,"\\'"), sb = (it.sub||'').replace(/'/g,"\\'");
+        return sb
+            ? `    { id: '${id}', label: '${lb}', sub: '${sb}', isLP: ${!!it.isLP} },`
+            : `    { id: '${id}', label: '${lb}', isLP: ${!!it.isLP} },`;
+    }).join('\n');
+
+    const s2Code = cfg.step2.map(cat => {
+        const cl = (cat.label||'').replace(/'/g,"\\'");
+        const items = cat.items.map(it => {
+            const id = it.id.replace(/'/g,"\\'"), lb = (it.label||'').replace(/'/g,"\\'");
+            const ex = [it.required && 'required: true', it.maxQty && `maxQty: ${it.maxQty}`].filter(Boolean);
+            const subPart = it.sub ? `, sub: '${it.sub.replace(/'/g,"\\'")}' ` : '';
+            return `        { id: '${id}', label: '${lb}', price: ${it.price||0}, pages: ${it.pages||1}${ex.length ? ', '+ex.join(', ') : ''}${subPart} },`;
+        }).join('\n');
+        return `    { label: '${cl}', items: [\n${items}\n    ]},`;
+    }).join('\n');
+
+    const s3Code = cfg.step3.map(it => {
+        const id = it.id.replace(/'/g,"\\'"), lb = (it.label||'').replace(/'/g,"\\'");
+        const subPart = it.sub ? `, sub: '${it.sub.replace(/'/g,"\\'")}' ` : '';
+        return `    { id: '${id}', label: '${lb}', price: ${it.price||0}${subPart} },`;
+    }).join('\n');
+
+    const s4vCode = cfg.step4var.map(it => {
+        const id = it.id.replace(/'/g,"\\'"), lb = (it.label||'').replace(/'/g,"\\'");
+        const subPart = it.sub ? `, sub: '${it.sub.replace(/'/g,"\\'")}' ` : '';
+        return `    { id: '${id}', label: '${lb}', unitPrice: ${it.unitPrice||0}${subPart} },`;
+    }).join('\n');
+
+    const s4fCode = cfg.step4fix.map(it => {
+        const id = it.id.replace(/'/g,"\\'"), lb = (it.label||'').replace(/'/g,"\\'");
+        const subPart = it.sub ? `, sub: '${it.sub.replace(/'/g,"\\'")}' ` : '';
+        return `    { id: '${id}', label: '${lb}', price: ${it.price||0}${subPart} },`;
+    }).join('\n');
+
+    const snsCode = cfg.sns.map(sn => {
+        const lb = (sn.label||'').replace(/'/g,"\\'");
+        const ur = (sn.url||'').replace(/'/g,"\\'");
+        return `        { label: '${lb}', url: '${ur}' },`;
+    }).join('\n');
+
+    const freeStepsCode = cfg.freeSteps.length === 0
+        ? '    // フリーStepはまだありません。admin.html から追加できます。'
+        : cfg.freeSteps.map(fs => {
+            const fsId  = fs.id.replace(/'/g,"\\'");
+            const fsTtl = (fs.title||'').replace(/'/g,"\\'");
+            const itemsCode = (fs.items||[]).map(it => {
+                const iid = it.id.replace(/'/g,"\\'"), ilb = (it.label||'').replace(/'/g,"\\'");
+                const isubPart = it.sub ? `, sub: '${it.sub.replace(/'/g,"\\'")}' ` : '';
+                return `        { id: '${iid}', label: '${ilb}', price: ${it.price||0}${isubPart} },`;
+            }).join('\n');
+            return `    {\n        id: '${fsId}',\n        title: '${fsTtl}',\n        items: [\n${itemsCode}\n        ]\n    },`;
+        }).join('\n');
+
+    return `/**
+ * ============================================================
+ *  見積もりシミュレーター - 設定ファイル
+ *
+ *  【初回セットアップ】
+ *  admin.html を開いて設定し、「ユーザー設定を保存」でJSONファイルを
+ *  ダウンロードしてください。次回以降は「ユーザー設定を読込」で
+ *  そのJSONファイルを読み込むだけで設定が反映されます。
+ *
+ *  【テンプレートの切り替え】
+ *  admin.html の「テンプレートを読込」から templates/ フォルダ内の
+ *  JSONファイルを読み込むと、見積もりの種類を切り替えられます。
+ *  ・flex-estimate.json: 汎用版（フリーStep形式）
+ *  ・web-estimate.json:  Web制作版（4ステップ固定＋フリーStep）
+ * ============================================================
+ */
+
+/* ============================================================
+   ① 会社・ブランド情報
+   （コピーテキスト・PDF見積書のフッターに使用されます）
+============================================================ */
+const SETTINGS = {
+    /* 社名 */
+    companyName: ${q(s.companyName)},
+    /* 担当者名 */
+    personName:  ${q(s.personName)},
+    /* メールアドレス */
+    email:       ${q(s.email)},
+    /* WebサイトURL */
+    url:         ${q(s.url)},
+    /* 担当部署 */
+    department:  ${q(s.department)},
+    /* 郵便番号 */
+    postalCode:  ${q(s.postalCode)},
+    /* 住所 */
+    address:     ${q(s.address)},
+    /* 電話番号 */
+    tel:         ${q(s.tel)},
+    /* FAX番号 */
+    fax:         ${q(s.fax)},
+    /* 問い合わせページURL（「この内容で相談する」ボタンの遷移先） */
+    contactUrl:  ${q(s.contactUrl)},
+
+    /* SNS（任意：不要な行は削除、追加も可能）
+       { label: '表示名', url: 'https://...' } の形式で配列に追加 */
+    sns: [
+${snsCode}
+    ],
+
+    /* ロゴ画像（Base64形式）
+       ・admin.html のロゴアップロード機能で自動設定されます
+       ・未設定（空文字）の場合は、社名テキストを表示します */
+${logoStr}
+
+    /* PDF見積書タイトル */
+    pdfTitle:     ${q(s.pdfTitle)},
+    /* PDF注記（見積書下部に表示される注意書き） */
+    pdfNote:      '${pdfNoteEsc}',
+
+    /* 結果ページ 注意書き（見積もり結果ページ下部に表示） */
+    disclaimer:   '${disclaimerEsc}',
+
+    /* ツールタイトル（ブラウザタブ・ヘッダーに表示） */
+    toolTitle:    ${q(s.toolTitle)},
+    /* ツールサブタイトル */
+    toolSubtitle: ${q(s.toolSubtitle)},
+
+    /* localStorage キー（複数インストール時の衝突防止。基本変更不要） */
+    storageKey:   ${q(s.storageKey || 'estimate_v1')},
+
+    /* テンプレートタイプ（'flex': 汎用版 / 'web': Web制作版） */
+    templateType: ${q(s.templateType || 'flex')},
+    /* テンプレート名（表示用） */
+    templateName: ${q(s.templateName || '')},
+
+    /* ディレクション費設定 */
+    directionFeeType:  ${q(s.directionFeeType || 'percent')},   /* 'percent' | 'fixed' | 'none' */
+    directionFeeValue: ${s.directionFeeValue ?? 10},          /* percent の場合は %、fixed の場合は円 */
+
+    /* 消費税率（%） */
+    taxRate: ${s.taxRate ?? 10},
+
+    /* ------------------------------------------------------------------
+       カラー設定
+    ------------------------------------------------------------------ */
+    colorPrimary:       ${q(s.colorPrimary)},
+    colorSecondary:     ${q(s.colorSecondary)},
+    colorBg:            ${q(s.colorBg)},
+    colorAccentBg:      ${q(s.colorAccentBg)},
+    colorAccentBorder:  ${q(s.colorAccentBorder)},
+    colorWarningBg:     ${q(s.colorWarningBg)},
+    colorWarningText:   ${q(s.colorWarningText)},
+    colorWarningBorder: ${q(s.colorWarningBorder)},
+    colorPanelHeadBg:   ${q(s.colorPanelHeadBg)},
+    colorPanelHeadText: ${q(s.colorPanelHeadText)},
+    colorCardSubText:   ${q(s.colorCardSubText)},
+};
+
+
+/* ============================================================
+   ② Web制作版 固定Step 価格定数
+   （templateType が 'web' の場合のみ使用）
+============================================================ */
+const S2_TOP_PRICE_LP  = ${cfg.s2TopLp};   // LPのトップページ価格
+const S2_TOP_PRICE_STD = ${cfg.s2TopStd};   // 通常サイトのトップページ価格
+const LP_SECTION_PRICE = ${cfg.lpSecPrice};   // LP追加セクション1つあたりの価格
+
+
+/* ============================================================
+   ③ Web制作版 STEP1：サイトタイプ
+   （templateType が 'web' の場合のみ使用）
+============================================================ */
+const STEP1_ITEMS = [
+${s1Code}
+];
+
+
+/* ============================================================
+   ④ Web制作版 STEP2：ページ構成
+   （templateType が 'web' の場合のみ使用）
+============================================================ */
+const STEP2_CATS = [
+${s2Code}
+];
+
+
+/* ============================================================
+   ⑤ Web制作版 STEP3：機能・演出
+   （templateType が 'web' の場合のみ使用）
+============================================================ */
+const STEP3_ITEMS = [
+${s3Code}
+];
+
+
+/* ============================================================
+   ⑥ Web制作版 STEP4：システム・設定
+   （templateType が 'web' の場合のみ使用）
+============================================================ */
+/* ページ数×単価（LP時は calcTotals() で別途処理） */
+const STEP4_VAR = [
+${s4vCode}
+];
+
+/* 固定価格 */
+const STEP4_FIX = [
+${s4fCode}
+];
+
+
+/* ============================================================
+   ⑦ フリーStep（汎用版では Step1以降、Web制作版では Step5以降）
+   チェックボックス型で複数選択・価格加算方式です。
+============================================================ */
+const FREE_STEPS = [
+${freeStepsCode}
+];
+`;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ダウンロード（JSON形式）
+═══════════════════════════════════════════════════════════ */
+document.getElementById('btnDl').addEventListener('click', () => {
+    try {
+        const jsonData = buildUserSettingsJson();
+        const blob = new Blob([JSON.stringify(jsonData, null, 2)], { type: 'application/json;charset=utf-8' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href = url;
+        a.download = 'mitsurimo-settings.json';
+        document.body.appendChild(a); a.click();
+        setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
+        toast('✅ ユーザー設定をJSONとして保存しました！次回は「ユーザー設定を読込」で復元できます。');
+    } catch(e) { toast('エラー: ' + e.message, 'error'); }
+});
+
+/* ═══════════════════════════════════════════════════════════
+   コードをコピー（settings.js 形式）
+═══════════════════════════════════════════════════════════ */
+document.getElementById('btnCp').addEventListener('click', async () => {
+    try {
+        await navigator.clipboard.writeText(generateCode());
+        toast('✅ settings.js コードをクリップボードにコピーしました！');
+    } catch { toast('コピーに失敗しました。', 'error'); }
+});
+
+/* ═══════════════════════════════════════════════════════════
+   ユーザー設定を読込（JSON形式）
+═══════════════════════════════════════════════════════════ */
+document.getElementById('btnSettingsLoad').addEventListener('click', () => {
+    document.getElementById('settingsLoadFile').click();
+});
+
+document.getElementById('settingsLoadFile').addEventListener('change', function () {
+    const file = this.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        let data;
+        try { data = JSON.parse(e.target.result); }
+        catch {
+            toast('JSONの読み込みに失敗しました。正しいファイルを選択してください。', 'error');
+            return;
+        }
+        if (!data.settings || !data.template) {
+            toast('ユーザー設定ファイルの形式が正しくありません（settings・template フィールドが必要です）。', 'error');
+            return;
+        }
+
+        const tmplName = data.template.name || data.template.type || 'テンプレート';
+        if (!confirm(
+            `ユーザー設定ファイルを読み込みます。\n\n` +
+            `テンプレート：${tmplName}\n\n` +
+            `現在の設定（会社情報・カラー・テンプレート）がすべて上書きされます。\n` +
+            `よろしいですか？`
+        )) return;
+
+        // 設定を適用
+        Object.assign(cfg.settings, data.settings);
+        if (Array.isArray(data.settings.sns)) cfg.sns = deepCopy(data.settings.sns);
+        if (data.settings.logoBase64) {
+            cfg.logoBase64          = data.settings.logoBase64;
+            cfg.settings.logoBase64 = data.settings.logoBase64;
+        } else {
+            cfg.logoBase64          = '';
+            cfg.settings.logoBase64 = '';
+            resetLogoPrev();
+        }
+
+        // テンプレートを適用
+        applyTemplate(data.template);
+
+        saveAdminState();
+        loadForms();
+        buildColorGrid();
+        Object.keys(ADMIN_COLOR_MAP).forEach(key => {
+            const val = cfg.settings[key];
+            if (val) applyAdminColor(key, val);
+        });
+        buildS1(); buildS2(); buildS3(); buildS4();
+        updateTemplateTypeUI();
+        toast('✅ ユーザー設定を読み込みました。');
+    };
+    reader.readAsText(file);
+    this.value = '';
+});
+
+/* ═══════════════════════════════════════════════════════════
+   テンプレートを読込（JSON形式）
+═══════════════════════════════════════════════════════════ */
+document.getElementById('btnProjLoad').addEventListener('click', () => {
+    document.getElementById('projLoadFile').click();
+});
+
+document.getElementById('projLoadFile').addEventListener('change', function () {
+    const file = this.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        let tmpl;
+        try { tmpl = JSON.parse(e.target.result); }
+        catch {
+            toast('JSONの読み込みに失敗しました。正しいファイルを選択してください。', 'error');
+            return;
+        }
+        if (!tmpl.type || (tmpl.type !== 'flex' && tmpl.type !== 'web')) {
+            toast('テンプレートファイルの形式が正しくありません（type: "flex" または "web" が必要です）。', 'error');
+            return;
+        }
+
+        const tmplName = tmpl.name || tmpl.type;
+        const modeLabel = tmpl.type === 'web' ? 'Web制作版' : '汎用版（フリーStep）';
+        if (!confirm(
+            `テンプレートを読み込みます。\n\n` +
+            `テンプレート名：${tmplName}\n` +
+            `種類：${modeLabel}\n\n` +
+            `現在のStep設定（項目・金額）が上書きされます。\n` +
+            `会社情報・カラーは変更されません。\n\n` +
+            `よろしいですか？`
+        )) return;
+
+        applyTemplate(tmpl);
+
+        saveAdminState();
+        buildS1(); buildS2(); buildS3(); buildS4();
+        updateTemplateTypeUI();
+        toast(`✅ テンプレート「${tmplName}」を読み込みました。`);
+    };
+    reader.readAsText(file);
+    this.value = '';
+});
+
+/* ═══════════════════════════════════════════════════════════
+   その他ボタン
+═══════════════════════════════════════════════════════════ */
+document.getElementById('btnAdminReset').addEventListener('click', () => {
+    if (!confirm('ブラウザに保存した管理画面データを削除し、settings.js の初期値に戻しますか？')) return;
+    localStorage.removeItem(ADMIN_STORAGE_KEY);
+    location.reload();
+});
+
+/* ツールを確認 */
+document.getElementById('btnPreview').addEventListener('click', () => {
+    collectForms();
+    const s = cfg.settings;
+    const PREVIEW_KEY = (s.storageKey || 'estimate_v1') + '_previewColors';
+    try {
+        localStorage.setItem(PREVIEW_KEY, JSON.stringify({
+            colorPrimary:       s.colorPrimary,
+            colorSecondary:     s.colorSecondary,
+            colorBg:            s.colorBg,
+            colorAccentBg:      s.colorAccentBg,
+            colorAccentBorder:  s.colorAccentBorder,
+            colorWarningBg:     s.colorWarningBg,
+            colorWarningText:   s.colorWarningText,
+            colorWarningBorder: s.colorWarningBorder,
+            colorPanelHeadBg:   s.colorPanelHeadBg,
+            colorPanelHeadText: s.colorPanelHeadText,
+            colorCardSubText:   s.colorCardSubText,
+            _templateType:      s.templateType,
+            _freeSteps:         cfg.freeSteps,
+            _contactUrl:        s.contactUrl,
+            _step1:             cfg.step1,
+            _step2:             cfg.step2,
+            _step3:             cfg.step3,
+            _step4var:          cfg.step4var,
+            _step4fix:          cfg.step4fix,
+            _s2TopLp:           cfg.s2TopLp,
+            _s2TopStd:          cfg.s2TopStd,
+            _lpSecPrice:        cfg.lpSecPrice,
+            _companyName:       s.companyName,
+            _personName:        s.personName,
+            _email:             s.email,
+            _url:               s.url,
+            _department:        s.department,
+            _postalCode:        s.postalCode,
+            _address:           s.address,
+            _tel:               s.tel,
+            _fax:               s.fax,
+            _logoBase64:        cfg.logoBase64,
+            _toolTitle:         s.toolTitle,
+            _toolSubtitle:      s.toolSubtitle,
+            _pdfTitle:          s.pdfTitle,
+            _pdfNote:           s.pdfNote,
+            _disclaimer:        s.disclaimer,
+            _sns:               cfg.sns,
+            _directionFeeType:  s.directionFeeType,
+            _directionFeeValue: s.directionFeeValue,
+            _taxRate:           s.taxRate,
+        }));
+    } catch(_) {}
+    window.open('./index.html', '_blank');
+});
+
+/* ═══════════════════════════════════════════════════════════
+   フリーStep エディター
+   flex: Step 1, 2, 3...（offset=0）
+   web:  Step 5, 6, 7...（offset=4）
+═══════════════════════════════════════════════════════════ */
+function buildFreeStepEditor() {
+    const c  = document.getElementById('freeStepEditor');
+    const em = document.getElementById('freeStepEmpty');
+    c.querySelectorAll('.free-step-block').forEach(el => el.remove());
+
+    em.style.display = cfg.freeSteps.length === 0 ? 'flex' : 'none';
+
+    const isWeb  = cfg.settings.templateType === 'web';
+    const offset = isWeb ? 4 : 0;
+
+    cfg.freeSteps.forEach((fs, fsIdx) => {
+        const stepNum = offset + fsIdx + 1;
+        const block = document.createElement('div');
+        block.className = 'free-step-block';
+
+        const head = document.createElement('div');
+        head.className = 'free-step-block__head';
+
+        const numBadge = document.createElement('span');
+        numBadge.className = 'free-step-num';
+        numBadge.textContent = `Step ${stepNum}`;
+
+        const titleInp = document.createElement('input');
+        titleInp.type = 'text'; titleInp.className = 'free-step-title-inp';
+        titleInp.placeholder = 'ステップ名（例：保守・運用プラン）';
+        titleInp.value = fs.title || '';
+        titleInp.addEventListener('input', () => { cfg.freeSteps[fsIdx].title = titleInp.value; saveAdminState(); });
+
+        const delStepBtn = document.createElement('button');
+        delStepBtn.className = 'btn-del-step'; delStepBtn.textContent = 'Step削除';
+        delStepBtn.addEventListener('click', () => {
+            if (!confirm(`「${fs.title || 'Step ' + stepNum}」を削除しますか？`)) return;
+            cfg.freeSteps.splice(fsIdx, 1);
+            buildFreeStepEditor();
+            saveAdminState();
+        });
+
+        head.append(numBadge, titleInp, delStepBtn);
+        block.appendChild(head);
+
+        const body = document.createElement('div');
+        body.className = 'free-step-block__body';
+
+        const itemsContainer = document.createElement('div');
+        itemsContainer.id = `fsItems_${fs.id}`;
+        body.appendChild(itemsContainer);
+
+        const renderItems = () => {
+            itemsContainer.innerHTML = '';
+            fs.items.forEach((it, itIdx) => {
+                const row = document.createElement('div');
+                row.className = 'item-row';
+                const nameIn = mkInput(it.label, '項目名', () => { fs.items[itIdx].label = nameIn.value; });
+                const subIn  = mkInput(it.sub, 'サブテキスト（任意）', () => { fs.items[itIdx].sub = subIn.value; });
+                const { wrap: pw, inp: priceInp } = mkPriceInput(it.price, () => {
+                    fs.items[itIdx].price = parseInt(priceInp.value) || 0;
+                });
+                row.append(nameIn, subIn, pw, mkDelBtn(() => { fs.items.splice(itIdx, 1); renderItems(); saveAdminState(); }));
+                makeDraggable(row, itIdx, fs.items, renderItems);
+                itemsContainer.appendChild(row);
+            });
+        };
+        renderItems();
+
+        const addItemBtn = document.createElement('button');
+        addItemBtn.className = 'btn-add';
+        addItemBtn.style.cssText = 'margin-top:8px;';
+        addItemBtn.textContent = '＋ 項目追加';
+        addItemBtn.addEventListener('click', () => {
+            fs.items.push({ id: `${fs.id}_${Date.now()}`, label: '', price: 0, sub: '' });
+            renderItems();
+        });
+        body.appendChild(addItemBtn);
+
+        block.appendChild(body);
+        c.appendChild(block);
+    });
+}
+
+document.getElementById('btnAddFreeStep').addEventListener('click', () => {
+    const id = `fs_${Date.now()}`;
+    cfg.freeSteps.push({ id, title: '', items: [] });
+    buildFreeStepEditor();
+    saveAdminState();
+    toast('フリーStepを追加しました。');
+});
+
+/* ═══════════════════════════════════════════════════════════
+   初期化
+═══════════════════════════════════════════════════════════ */
+(function init() {
+    loadAdminState();
+    updateTemplateBadge();
+    buildColorGrid();
+    Object.keys(ADMIN_COLOR_MAP).forEach(key => {
+        const val = cfg.settings[key];
+        if (val) applyAdminColor(key, val);
+    });
+    loadForms();
+    buildS1();
+    buildS2();
+    buildS3();
+    buildS4();
+    updateTemplateTypeUI(); // これが buildFreeStepEditor() も呼ぶ
+
+    // 保存エリア アコーディオン
+    const saveArea  = document.querySelector('.save-area');
+    const saveTitle = document.getElementById('saveAreaTitle');
+    if (window.innerWidth <= 640) saveArea.classList.add('collapsed');
+    saveTitle.addEventListener('click', () => saveArea.classList.toggle('collapsed'));
+    saveTitle.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); saveArea.classList.toggle('collapsed'); } });
+
+    document.getElementById('f-directionFeeType').addEventListener('change', () => {
+        collectForms();
+        updateDirectionFeeUI();
+    });
+
+    const formIds = ['f-companyName','f-personName','f-email','f-url','f-contactUrl',
+                     'f-department','f-postalCode','f-address','f-tel','f-fax',
+                     'f-toolTitle','f-toolSubtitle','f-pdfTitle','f-pdfNote','f-disclaimer',
+                     'f-s2TopLp','f-s2TopStd','f-lpSec','f-directionFeeValue','f-taxRate'];
+    formIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', () => {
+            collectForms();
+            if (id === 'f-s2TopLp' || id === 'f-s2TopStd') {
+                document.querySelectorAll('[data-top-price-info]').forEach(span => {
+                    span.textContent = `LP ¥${cfg.s2TopLp.toLocaleString('ja-JP')} / 通常 ¥${cfg.s2TopStd.toLocaleString('ja-JP')}`;
+                });
+            }
+        });
+    });
+})();
+</script>
+
+</body>
+</html>
